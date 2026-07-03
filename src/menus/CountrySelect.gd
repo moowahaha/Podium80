@@ -41,7 +41,6 @@ func _screen_ready() -> void:
 		ath.set_country(ids[i])
 		ath.set_state(Athlete.State.IDLE)
 		ath.position = Vector2(cx + CARD_W / 2.0, 400)
-		ath.scale = Vector2.ONE * Palette.ATHLETE_SCALE
 		add_child(ath)
 		_athletes.append(ath)
 

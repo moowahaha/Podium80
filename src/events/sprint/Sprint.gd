@@ -56,7 +56,7 @@ func _event_ready() -> void:
 		ath.set_country(id)
 		ath.set_state(Athlete.State.READY)
 		ath.position = Vector2(START_X, LANE_Y[lane])
-		ath.scale = Vector2(LANE_SCALE[lane], LANE_SCALE[lane]) * Palette.ATHLETE_SCALE
+		ath.set_depth(LANE_SCALE[lane])
 		add_child(ath)
 		var human := Game.is_human(id)
 		runners.append({
@@ -173,7 +173,11 @@ func _run_step(delta: float) -> void:
 			var x := clampf(elapsed / maxf(r["target"], 0.1), 0.0, 1.0)
 			r["dist"] = DIST_M * pow(x, 1.06)
 			r["node"].run_speed = clampf(1.2 - x * 0.2, 0.4, 1.0)
-		r["node"].set_state(Athlete.State.RUN)
+		# Stationary (no input) shows the standing pose; otherwise running.
+		if r["human"] and r["node"].run_speed <= 0.05:
+			r["node"].set_state(Athlete.State.IDLE)
+		else:
+			r["node"].set_state(Athlete.State.RUN)
 		r["node"].position.x = START_X + r["dist"] * PX_PER_M
 		if r["dist"] >= DIST_M:
 			r["done"] = true

@@ -48,7 +48,6 @@ func _screen_ready() -> void:
 		ath.set_country(id)
 		ath.set_state(Athlete.State.CELEBRATE if place == 0 else Athlete.State.IDLE)
 		ath.position = Vector2(slot["x"], slot["top"])
-		ath.scale = Vector2.ONE * Palette.ATHLETE_SCALE
 		add_child(ath)
 
 		var nm := UI.center_label(CountryData.abbrev_of(id), 20, Palette.INK)

@@ -58,7 +58,7 @@ func _event_ready() -> void:
 		ath.set_country(id)
 		ath.set_state(Athlete.State.READY)
 		ath.position = Vector2(START_X, LANE_Y[lane])
-		ath.scale = Vector2(LANE_SCALE[lane], LANE_SCALE[lane]) * Palette.ATHLETE_SCALE
+		ath.set_depth(LANE_SCALE[lane])
 		add_child(ath)
 		var eng: RunEngine = null
 		if human:

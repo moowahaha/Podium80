@@ -28,8 +28,17 @@ func _screen_ready() -> void:
 			"size": seed_rng.randi_range(3, 5),
 		})
 
-	_title = _band("PODIUM '80", 100, Palette.HIGHLIGHT, 120, 115)
-	_sub = _band("INTERNATIONAL SUMMER GAMES  ·  1980", 20, Palette.PAPER, 240, 30)
+	# Static two-colour wordmark in Russo One: "PODIUM" red, "'80" blue.
+	var russo: Font = load("res://assets/fonts/RussoOne-Regular.ttf")
+	var tsize := 118
+	var w1: float = russo.get_string_size("PODIUM ", HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
+	var w2: float = russo.get_string_size("'80", HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
+	var sx := (Palette.BASE_WIDTH - (w1 + w2)) / 2.0
+	var ty := 92.0
+	_title_part("PODIUM ", Color("e2342f"), russo, tsize, sx, ty)
+	_title_part("'80", Color("2f6fe0"), russo, tsize, sx + w1, ty)
+
+	_sub = _band("INTERNATIONAL SUMMER GAMES  ·  1980", 20, Palette.PAPER, 250, 30)
 	_prompt = _band("PRESS  A  TO BEGIN", 25, Palette.HIGHLIGHT, 440, 35)
 	_band("A FICTIONAL SPORTING EVENT  ·  PLACEHOLDER BUILD", 15, Palette.PAPER, 495, 20)
 
@@ -43,10 +52,20 @@ func _band(text: String, size: int, color: Color, y: float, h: float) -> Label:
 	add_child(l)
 	return l
 
+## A static two-colour title part in Russo One (no movement, per design).
+func _title_part(text: String, color: Color, font: Font, fsize: int, x: float, y: float) -> void:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_override("font", font)
+	l.add_theme_font_size_override("font_size", fsize)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", Palette.INK)
+	l.add_theme_constant_override("outline_size", 12)
+	l.position = Vector2(x, y)
+	add_child(l)
+
 func _process(delta: float) -> void:
 	_t += delta
-	# Title bob.
-	_title.position.y = 120 + sin(_t * 2.0) * 5.0
 	_prompt.modulate.a = 0.6 + 0.4 * (0.5 + 0.5 * sin(_t * 4.0))
 	queue_redraw()
 

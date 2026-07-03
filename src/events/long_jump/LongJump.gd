@@ -18,11 +18,14 @@ var cam: CameraManager
 var ath: Athlete
 var engine := RunEngine.new()
 var state: St = St.APPROACH
-var attempt := 1
-var best_m := 0.0
 var target := 0.0                # best AI mark to beat (shown to the player)
 var ai_values: Dictionary = {}
-var human_id: StringName
+var players: Array = []          # human country ids in player order (turn-taking)
+var best: Dictionary = {}        # country_id -> best mark
+var player_attempt: Dictionary = {}  # player index -> attempts taken
+var turn_order: Array = []       # round-robin sequence of player indices
+var turn_idx := 0
+var cur_id: StringName           # current jumper's country
 
 # flight
 var flight_t := 0.0
@@ -38,19 +41,26 @@ func _music_key() -> StringName:
 
 func _event_ready() -> void:
 	ai_values = Game.roll_ai_values()
-	human_id = humans()[0] if not humans().is_empty() else Game.participants[0]
 	for v in ai_values.values():
 		target = maxf(target, float(v))
+	players = humans()
+	if players.is_empty():
+		players = [Game.participants[0]]
+	for i in players.size():
+		best[players[i]] = 0.0
+		player_attempt[i] = 0
+	for _r in ATTEMPTS:
+		for i in players.size():
+			turn_order.append(i)
 
 	stadium = Stadium.new()
 	stadium.world_width = WORLD_W
 	stadium.track_markings = false
-	stadium.set_backdrop("res://assets/stadium/long_jump.png")   # drop-in art; procedural fallback
+	stadium.set_backdrop("res://assets/stadium/track.png")   # shares the running-stadium backdrop
 	add_child(stadium)
 
 	ath = Athlete.new()
-	ath.set_country(human_id)
-	ath.scale = Vector2.ONE * Palette.ATHLETE_SCALE
+	ath.set_country(players[0])
 	add_child(ath)
 
 	cam = CameraManager.new()
@@ -68,17 +78,23 @@ func _event_ready() -> void:
 	_begin_attempt()
 
 func _begin_attempt() -> void:
+	var cur: int = turn_order[turn_idx]
+	cur_id = players[cur]
+	player_attempt[cur] = int(player_attempt[cur]) + 1
 	engine.reset()
 	engine.start()
+	ath.set_country(cur_id)
 	ath.position = Vector2(RUNUP_X, stadium.ground_y)
-	ath.set_state(Athlete.State.READY)
+	ath.set_state(Athlete.State.IDLE)         # standing at the runway, waiting to start the run-up
 	measured = 0.0
 	state = St.APPROACH
 	_update_info()
 	set_prompt("ALTERNATE  A / B  TO RUN     LB  TO JUMP AT THE BOARD")
 
 func _update_info() -> void:
-	_info.text = "ATTEMPT %d/%d    BEST %.2f m    TARGET %.2f m" % [attempt, ATTEMPTS, best_m, target]
+	var cur: int = turn_order[turn_idx]
+	var who := "" if players.size() == 1 else "P%d   " % (cur + 1)
+	_info.text = "%sATTEMPT %d/%d    BEST %.2f m    TARGET %.2f m" % [who, int(player_attempt[cur]), ATTEMPTS, float(best[cur_id]), target]
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -91,14 +107,14 @@ func _process(delta: float) -> void:
 			pass
 
 func _approach(delta: float) -> void:
-	var pi := Game.player_index_of(human_id)
+	var pi := Game.player_index_of(cur_id)
 	if Input.is_action_just_pressed(Platform.act(pi, &"a")):
 		engine.tap_a()
 	if Input.is_action_just_pressed(Platform.act(pi, &"b")):
 		engine.tap_b()
 	engine.update(delta)
 	ath.run_speed = engine.speed_ratio()
-	ath.set_state(Athlete.State.RUN)
+	ath.set_state(Athlete.State.RUN if ath.run_speed > 0.05 else Athlete.State.IDLE)
 	var x := RUNUP_X + engine.distance * PX_PER_M
 	ath.position.x = x
 
@@ -142,8 +158,8 @@ func _foul(reason: String) -> void:
 func _record(mark: float, foul: bool) -> void:
 	state = St.LANDED
 	if not foul:
-		if mark > best_m:
-			best_m = mark
+		if mark > float(best[cur_id]):
+			best[cur_id] = mark
 			banner("%.2f m  —  BEST!" % mark, Palette.HIGHLIGHT, 1.4)
 			AudioBus.swell_crowd(-8.0)
 		else:
@@ -151,16 +167,19 @@ func _record(mark: float, foul: bool) -> void:
 	_update_info()
 	set_prompt("")
 	await get_tree().create_timer(1.6).timeout
-	if attempt >= ATTEMPTS:
+	turn_idx += 1
+	if turn_idx >= turn_order.size():
 		_finish()
 	else:
-		attempt += 1
 		_begin_attempt()
 
 func _finish() -> void:
 	state = St.DONE
-	banner_persist("FINAL: %.2f m" % best_m, Palette.HIGHLIGHT)
-	finish({human_id: best_m}, ai_values)
+	if players.size() == 1:
+		banner_persist("FINAL: %.2f m" % float(best[players[0]]), Palette.HIGHLIGHT)
+	else:
+		banner_persist("P1  %.2f m      P2  %.2f m" % [float(best[players[0]]), float(best[players[1]])], Palette.HIGHLIGHT)
+	finish(best.duplicate(), ai_values)
 
 func _draw() -> void:
 	# Sand pit + take-off board over the track.

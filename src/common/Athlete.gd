@@ -7,28 +7,67 @@ class_name Athlete
 ## Replaceable later: swap _draw for an AnimatedSprite2D without touching callers — the public API
 ## (set_country, state, run cycle, facing) is what gameplay uses.
 
-enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE, SWIM }
+enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE, SWIM, HURDLE }
+
+# Per-country sprite sheets by state (expand as art arrives). Frames laid out left-to-right,
+# top-to-bottom in a cols×rows grid. States without a sheet fall back to the procedural drawing.
+const SPRITE_MAP := {
+	&"USSR": {
+		State.IDLE: {"path": "res://assets/sprites/ussr-standing.png", "cols": 1, "rows": 1, "frames": 1},
+		State.RUN: {"path": "res://assets/sprites/ussr-running.png", "cols": 3, "rows": 3, "frames": 9},
+		State.READY: {"path": "res://assets/sprites/ussr-start-crouch.png", "cols": 1, "rows": 1, "frames": 1},
+		State.HURDLE: {"path": "res://assets/sprites/ussr-hurdle.png", "cols": 1, "rows": 1, "frames": 1},
+	},
+}
 
 @export var country_id: StringName = &"USSR"
 @export var facing := 1                       # +1 right, -1 left
 
 var state: State = State.IDLE
 var run_speed := 0.0                          # 0..1, drives leg-cycle rate
+var depth := 1.0                              # lane-depth scale (events set this)
 var _phase := 0.0                             # leg cycle phase
 var _anim_t := 0.0                            # generic state timer (jump arc, celebrate bob)
 var _spin := 0.0                              # hammer wind-up body spin (throw)
+var _sheets: Dictionary = {}                  # State -> {tex, cols, rows, frames, fw, fh}
 
-const H := 26.0                               # nominal height in px
+const H := 26.0                               # nominal procedural height in px
 
 func set_country(id: StringName) -> void:
 	country_id = id
+	_load_sheets()
+	_apply_scale()
 	queue_redraw()
 
 func set_state(s: State) -> void:
 	if state != s:
 		state = s
 		_anim_t = 0.0
+		_apply_scale()
 	queue_redraw()
+
+func set_depth(d: float) -> void:
+	depth = d
+	_apply_scale()
+
+## A sprite frame is native ~64px (the target on-screen size); the procedural drawing is ~26px, so it
+## gets ATHLETE_SCALE. Either way the athlete lands at ~64px * depth on screen, keeping states + lanes
+## consistent when we mix sprites and placeholders.
+func _apply_scale() -> void:
+	var factor := 1.0 if _sheets.has(state) else Palette.ATHLETE_SCALE
+	scale = Vector2(depth * factor, depth * factor)
+
+func _load_sheets() -> void:
+	_sheets = {}
+	var m: Dictionary = SPRITE_MAP.get(country_id, {})
+	for st in m:
+		var info: Dictionary = m[st]
+		if ResourceLoader.exists(info["path"]):
+			var tex: Texture2D = load(info["path"])
+			_sheets[st] = {
+				"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
+				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
+			}
 
 func _process(delta: float) -> void:
 	_anim_t += delta
@@ -39,6 +78,11 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	# Real sprite sheet for this state (e.g. USSR run / crouch), if present.
+	if _sheets.has(state):
+		_draw_sheet(_sheets[state])
+		return
+
 	var kp := CountryData.kit_primary_of(country_id)
 	var ks := CountryData.kit_secondary_of(country_id)
 	var skin := CountryData.kit_skin_of(country_id)
@@ -59,6 +103,30 @@ func _draw() -> void:
 		_:
 			_draw_upright(kp, ks, skin, f)
 
+## The figure only fills ~80% of its square frame; scale up so it reads at the same ~64px as the
+## procedural placeholders.
+const SPRITE_FIT := 1.25
+
+func _draw_sheet(sh: Dictionary) -> void:
+	var fw: float = sh["fw"]
+	var fh: float = sh["fh"]
+	var dw: float = fw * SPRITE_FIT
+	var dh: float = fh * SPRITE_FIT
+	# Shadow sized to the sprite footprint.
+	draw_ellipse_approx(Vector2(0, -1.0), dw * 0.24, dw * 0.07, Palette.SHADOW)
+	var frames := int(sh["frames"])
+	var idx := int(_phase) % frames if frames > 1 else 0
+	var col := idx % int(sh["cols"])
+	var row := idx / int(sh["cols"])
+	var src := Rect2(col * fw, row * fh, fw, fh)
+	var dest := Rect2(-dw / 2.0, -dh, dw, dh)     # feet at origin, centred
+	if facing < 0:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1, 1))
+		draw_texture_rect_region(sh["tex"], dest, src)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	else:
+		draw_texture_rect_region(sh["tex"], dest, src)
+
 func _draw_upright(kp: Color, ks: Color, skin: Color, f: float) -> void:
 	var swing := 0.0
 	var arm := 0.0
@@ -72,7 +140,7 @@ func _draw_upright(kp: Color, ks: Color, skin: Color, f: float) -> void:
 		State.READY:
 			crouch = 5.0
 			lean = 4.0 * f
-		State.JUMP:
+		State.JUMP, State.HURDLE:
 			swing = -3.0
 			arm = -6.0
 		State.LAND:

@@ -65,7 +65,13 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var w := world_width
 	if backdrop:
-		draw_texture_rect(backdrop, Rect2(0, 0, w, float(Palette.BASE_HEIGHT)), true)
+		# Scale the art to the screen height and repeat it horizontally across the world.
+		var th := float(Palette.BASE_HEIGHT)
+		var tw: float = backdrop.get_width() * (th / backdrop.get_height())
+		var x := 0.0
+		while x < w:
+			draw_texture_rect(backdrop, Rect2(x, 0, tw, th), false)
+			x += tw
 		_draw_track(w)
 		return
 	# Sky gradient.
