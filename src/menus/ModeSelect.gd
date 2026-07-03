@@ -20,7 +20,7 @@ func _screen_ready() -> void:
 		options.append({"label": String(Game.EVENTS[i]["title"]), "champ": false, "index": i})
 
 	var title := UI.center_label("PODIUM '80", 56, Palette.HIGHLIGHT)
-	title.position = Vector2(0, 26)
+	title.position = Vector2(0, 8)
 	title.size = Vector2(Palette.BASE_WIDTH, 62)
 	add_child(title)
 

@@ -28,6 +28,14 @@ var state_t := 0.0
 var set_wait := 1.2
 var elapsed := 0.0
 var _clock: Label
+var _post_started := false        # all runners crossed; now running off-screen before results
+var _post_t := 0.0
+var hurdle_fall := {}             # (hurdle_index*100 + lane) -> tip progress 0..1
+var tape_broken := false
+var tape_t := 0.0
+var tape_break_y := 0.0
+
+const COAST_TOP_PX := 185.0       # px/s at full coast for the run-off
 
 func _music_key() -> StringName:
 	return &"track"
@@ -148,11 +156,10 @@ func _false_start() -> void:
 func _run_step(delta: float) -> void:
 	elapsed += delta
 	_clock.text = "%.2f" % elapsed
-	var all_done := true
 	for r in runners:
 		if r["done"]:
+			_coast(r, delta)                     # keep running through the line and off-screen
 			continue
-		all_done = false
 		if r["human"]:
 			_human_step(r, delta)
 		else:
@@ -176,16 +183,52 @@ func _run_step(delta: float) -> void:
 		if r["dist"] >= DIST_M:
 			r["done"] = true
 			r["time"] = elapsed if r["human"] else r["target"]
-			r["node"].position.x = FINISH_X
-			r["node"].set_state(Athlete.State.CELEBRATE)
+			r["coast"] = maxf(r["node"].run_speed, 0.7)
+			if not tape_broken:                  # first across breaks the tape
+				tape_broken = true
+				tape_break_y = r["base_y"] - 32.0
+
+	# Advance falling hurdles + tape break.
+	for k in hurdle_fall:
+		hurdle_fall[k] = minf(1.0, float(hurdle_fall[k]) + delta / 0.35)
+	if tape_broken:
+		tape_t += delta
 
 	if elapsed > RACE_TIMEOUT:
 		for r in runners:
 			if not r["done"]:
 				r["done"] = true
 				r["time"] = RACE_TIMEOUT
-	if all_done or elapsed > RACE_TIMEOUT:
-		_finish_race()
+				r["coast"] = 0.7
+
+	var all_done := true
+	for r in runners:
+		if not r["done"]:
+			all_done = false
+			break
+	if all_done and not _post_started:
+		_post_started = true
+		_post_t = 0.0
+		AudioBus.swell_crowd(-6.0)
+		var mine := ""
+		for r in runners:
+			if r["human"]:
+				mine = "%s  %.2f s" % [CountryData.abbrev_of(r["id"]), r["time"]]
+				break
+		banner_persist("FINISH!  %s" % mine, Palette.HIGHLIGHT)
+		set_prompt("")
+	if _post_started:
+		_post_t += delta
+		if _post_t > 2.2:
+			_finish_race()
+
+## A finished runner keeps running right (never celebrates) until it's off-screen.
+func _coast(r: Dictionary, delta: float) -> void:
+	r["coast"] = maxf(0.5, float(r["coast"]) - 0.15 * delta)
+	r["node"].run_speed = r["coast"]
+	r["node"].set_state(Athlete.State.RUN)
+	r["node"].position.x += float(r["coast"]) * COAST_TOP_PX * delta
+	r["node"].position.y = r["base_y"]
 
 func _human_step(r: Dictionary, delta: float) -> void:
 	var pi: int = r["pidx"]
@@ -237,9 +280,10 @@ func _cross_hurdle(r: Dictionary) -> void:
 			eng.speed *= 0.72                        # mistimed clip
 			AudioBus.play(&"clang", -4.0)
 	else:
-		# grounded collision: heavy
+		# grounded collision: heavy — knock this lane's hurdle over
 		eng.speed *= 0.4
 		r["stumble"] = 0.5
+		hurdle_fall[r["next_h"] * 100 + r["lane"]] = 0.001
 		AudioBus.play(&"clang")
 		AudioBus.play(&"foul", -6.0)
 		banner("CLATTER!", Palette.BAD, 0.7)
@@ -248,31 +292,76 @@ func _finish_race() -> void:
 	if state == St.DONE:
 		return
 	_enter(St.DONE)
-	AudioBus.swell_crowd(-6.0)
 	var human_values: Dictionary = {}
-	var mine := ""
 	for r in runners:
 		if r["human"]:
 			human_values[r["id"]] = r["time"]
-			if mine == "":
-				mine = "%s  %.2f s" % [CountryData.abbrev_of(r["id"]), r["time"]]
-	banner_persist("FINISH!  %s" % mine, Palette.HIGHLIGHT)
 	set_prompt("")
 	finish(human_values, ai_values)
 
 func _draw() -> void:
 	draw_line(Vector2(START_X, 375), Vector2(START_X, 520), Palette.TRACK_LINE, 2.5)
-	# hurdles
-	for m in HURDLE_M:
-		var hx: float = START_X + m * PX_PER_M
-		for lane in LANE_Y.size():
-			var gy: float = LANE_Y[lane]
-			draw_rect(Rect2(hx - 2.5, gy - 22.0, 5.0, 22.0), Palette.PAPER)
-			draw_rect(Rect2(hx - 7.5, gy - 22.0, 15.0, 5.0), Palette.ACCENT)
-	# finish
+	# Hurdles (back lanes first so nearer lanes overlap them), 3D-ish, with falls.
+	for lane in range(LANE_Y.size() - 1, -1, -1):
+		for hi in HURDLE_M.size():
+			var hx: float = START_X + HURDLE_M[hi] * PX_PER_M
+			_draw_hurdle(hx, LANE_Y[lane], LANE_SCALE[lane], float(hurdle_fall.get(hi * 100 + lane, 0.0)))
+	# Finish line checker.
 	var y := 375.0
 	var on := true
 	while y < 520.0:
 		draw_rect(Rect2(FINISH_X - 5.0, y, 10.0, 10.0), Palette.PAPER if on else Palette.INK)
 		on = not on
 		y += 10.0
+	_draw_tape()
+
+## A side-on hurdle: a weighted base, two metal uprights and a striped top board. `fall` tips it
+## forward (rotates about the base) when clattered.
+func _draw_hurdle(hx: float, gy: float, s: float, fall: float) -> void:
+	var h := 34.0 * s          # board height
+	var w := 12.0 * s          # half base width
+	var metal := Color("cfd2da")
+	var metal_d := Color("9195a0")
+	var base := Palette.STAND_BASE.darkened(0.25)
+	draw_set_transform(Vector2(hx, gy), fall * PI / 2.0, Vector2.ONE)
+	# Weighted base feet (extend front + back) with a little thickness.
+	draw_rect(Rect2(-w * 1.25, -3.5 * s, w * 2.5, 3.5 * s), base)
+	draw_rect(Rect2(-w * 1.25, -3.5 * s, w * 2.5, 1.0 * s), base.lightened(0.2))
+	# Two uprights (back slightly darker for depth).
+	draw_rect(Rect2(-w * 0.55, -h, 2.5 * s, h), metal_d)
+	draw_rect(Rect2(w * 0.35, -h, 2.5 * s, h), metal)
+	var brace_y := -h * 0.45
+	draw_rect(Rect2(-w * 0.55, brace_y, w * 0.9, 1.5 * s), metal_d)   # cross-brace
+	# Top board: white with black stripes and a coloured leading edge.
+	var bw := w * 1.45
+	var by := -h - 6.5 * s
+	var bh := 7.0 * s
+	draw_rect(Rect2(-bw, by, bw * 2.0, bh), Palette.PAPER)
+	var sx := -bw
+	var k := 0
+	while sx < bw:
+		if k % 2 == 1:
+			draw_rect(Rect2(sx, by, 5.0 * s, bh), Palette.INK)
+		sx += 5.0 * s
+		k += 1
+	draw_rect(Rect2(-bw, by, bw * 2.0, 2.0 * s), Palette.ACCENT)      # coloured top edge
+	draw_rect(Rect2(-bw, by, bw * 2.0, bh), Palette.INK, false, 1.0 * s)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+## Finishing tape across the lanes at the line; snaps apart when the first runner crosses.
+func _draw_tape() -> void:
+	var top: float = LANE_Y[LANE_Y.size() - 1] - 40.0
+	var bot: float = LANE_Y[0] - 26.0
+	if not tape_broken:
+		draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X, bot), Palette.PAPER, 2.5)
+		return
+	var p := clampf(tape_t / 0.5, 0.0, 1.0)
+	if p >= 1.0:
+		return
+	var by := clampf(tape_break_y, top, bot)
+	var recoil := sin(p * PI) * 26.0          # ends whip out then settle
+	var a := 1.0 - p
+	var col := Color(Palette.PAPER.r, Palette.PAPER.g, Palette.PAPER.b, a)
+	# upper half retracts toward the top anchor, lower toward the bottom
+	draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X - recoil, lerpf(by, top, p)), col, 2.5)
+	draw_line(Vector2(FINISH_X, bot), Vector2(FINISH_X - recoil, lerpf(by, bot, p)), col, 2.5)

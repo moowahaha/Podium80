@@ -34,7 +34,7 @@ func _screen_ready() -> void:
 	var w1: float = russo.get_string_size("PODIUM ", HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
 	var w2: float = russo.get_string_size("'80", HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
 	var sx := (Palette.BASE_WIDTH - (w1 + w2)) / 2.0
-	var ty := 92.0
+	var ty := 40.0
 	_title_part("PODIUM ", Color("e2342f"), russo, tsize, sx, ty)
 	_title_part("'80", Color("2f6fe0"), russo, tsize, sx + w1, ty)
 

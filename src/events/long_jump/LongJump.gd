@@ -141,6 +141,7 @@ func _take_off(x: float) -> void:
 func _flight(delta: float) -> void:
 	flight_t += delta
 	var p := clampf(flight_t / flight_dur, 0.0, 1.0)
+	ath.anim01 = p                                # play the flight sprite through the arc
 	ath.position.x = lerpf(takeoff_x, land_x, p)
 	ath.position.y = stadium.ground_y - sin(p * PI) * jump_h
 	if p >= 1.0:

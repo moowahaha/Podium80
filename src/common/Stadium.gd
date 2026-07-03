@@ -65,13 +65,21 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var w := world_width
 	if backdrop:
-		# Scale the art to the screen height and repeat it horizontally across the world.
+		# Scale the art to the screen height and repeat it horizontally, MIRRORING every other tile so
+		# the seams line up (a tile's edge meets its own mirror image = identical pixels = seamless).
 		var th := float(Palette.BASE_HEIGHT)
 		var tw: float = backdrop.get_width() * (th / backdrop.get_height())
 		var x := 0.0
+		var i := 0
 		while x < w:
-			draw_texture_rect(backdrop, Rect2(x, 0, tw, th), false)
+			if i % 2 == 1:
+				draw_set_transform(Vector2(x + tw, 0.0), 0.0, Vector2(-1, 1))
+				draw_texture_rect(backdrop, Rect2(0, 0, tw, th), false)
+				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			else:
+				draw_texture_rect(backdrop, Rect2(x, 0, tw, th), false)
 			x += tw
+			i += 1
 		_draw_track(w)
 		return
 	# Sky gradient.

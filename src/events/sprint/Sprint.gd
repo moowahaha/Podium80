@@ -26,6 +26,13 @@ var set_wait := 1.2
 var elapsed := 0.0
 var _clock: Label
 var _false_count := 0
+var _post_started := false        # all runners crossed; now running off-screen before results
+var _post_t := 0.0
+var tape_broken := false
+var tape_t := 0.0
+var tape_break_y := 0.0
+
+const COAST_TOP_PX := 185.0       # px/s at full coast (≈ max speed) for the run-off
 
 func _music_key() -> StringName:
 	return &"track"
@@ -155,11 +162,10 @@ func _false_start() -> void:
 func _run_step(delta: float) -> void:
 	elapsed += delta
 	_clock.text = "%.2f" % elapsed
-	var all_done := true
 	for r in runners:
 		if r["done"]:
+			_coast(r, delta)                     # keep running through the line and off-screen
 			continue
-		all_done = false
 		if r["human"]:
 			var pi: int = r["pidx"]
 			var eng: RunEngine = r["engine"]
@@ -184,34 +190,58 @@ func _run_step(delta: float) -> void:
 		if r["dist"] >= DIST_M:
 			r["done"] = true
 			r["time"] = elapsed if r["human"] else r["target"]
-			r["node"].position.x = FINISH_X
-			r["node"].set_state(Athlete.State.CELEBRATE)
+			r["coast"] = maxf(r["node"].run_speed, 0.7)   # power through the line, don't celebrate
 			AudioBus.play(&"step", -2.0, 1.5)
+			if not tape_broken:
+				tape_broken = true
+				tape_break_y = LANE_Y[r["lane"]] - 32.0
+
+	if tape_broken:
+		tape_t += delta
 
 	if elapsed > RACE_TIMEOUT:
 		for r in runners:
 			if not r["done"]:
 				r["done"] = true
 				r["time"] = RACE_TIMEOUT
-	if all_done or elapsed > RACE_TIMEOUT:
-		_finish_race()
+				r["coast"] = 0.7
+
+	var all_done := true
+	for r in runners:
+		if not r["done"]:
+			all_done = false
+			break
+	if all_done and not _post_started:
+		_post_started = true
+		_post_t = 0.0
+		AudioBus.swell_crowd(-6.0)
+		var mine := ""
+		for r in runners:
+			if r["human"]:
+				mine = "%s  %.2f s" % [CountryData.abbrev_of(r["id"]), r["time"]]
+				break
+		banner_persist("FINISH!  %s" % mine, Palette.HIGHLIGHT)
+		set_prompt("")
+	if _post_started:
+		_post_t += delta
+		if _post_t > 2.2:                        # let them clear the screen, then results
+			_finish_race()
+
+## A finished runner keeps sprinting right (never celebrates on the line) until it's off-screen.
+func _coast(r: Dictionary, delta: float) -> void:
+	r["coast"] = maxf(0.5, float(r["coast"]) - 0.15 * delta)
+	r["node"].run_speed = r["coast"]
+	r["node"].set_state(Athlete.State.RUN)
+	r["node"].position.x += float(r["coast"]) * COAST_TOP_PX * delta
 
 func _finish_race() -> void:
 	if state == St.DONE:
 		return
 	_enter(St.DONE)
-	AudioBus.swell_crowd(-6.0)
 	var human_values: Dictionary = {}
 	for r in runners:
 		if r["human"]:
 			human_values[r["id"]] = r["time"]
-	# Show the human's headline time.
-	var mine := ""
-	for r in runners:
-		if r["human"]:
-			mine = "%s  %.2f s" % [CountryData.abbrev_of(r["id"]), r["time"]]
-			break
-	banner_persist("FINISH!  %s" % mine, Palette.HIGHLIGHT)
 	set_prompt("")
 	finish(human_values, ai_values)
 
@@ -225,3 +255,21 @@ func _draw() -> void:
 		draw_rect(Rect2(FINISH_X - 5.0, y, 10.0, 10.0), Palette.PAPER if on else Palette.INK)
 		on = not on
 		y += 10.0
+	_draw_tape()
+
+## Finishing tape across the lanes; snaps apart when the first runner crosses.
+func _draw_tape() -> void:
+	var top: float = LANE_Y[LANE_Y.size() - 1] - 40.0
+	var bot: float = LANE_Y[0] - 26.0
+	if not tape_broken:
+		draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X, bot), Palette.PAPER, 2.5)
+		return
+	var p := clampf(tape_t / 0.5, 0.0, 1.0)
+	if p >= 1.0:
+		return
+	var by := clampf(tape_break_y, top, bot)
+	var recoil := sin(p * PI) * 26.0
+	var a := 1.0 - p
+	var col := Color(Palette.PAPER.r, Palette.PAPER.g, Palette.PAPER.b, a)
+	draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X - recoil, lerpf(by, top, p)), col, 2.5)
+	draw_line(Vector2(FINISH_X, bot), Vector2(FINISH_X - recoil, lerpf(by, bot, p)), col, 2.5)

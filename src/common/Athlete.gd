@@ -20,6 +20,9 @@ const SPRITE_STATES := {
 		State.RUN:    {"file": "running",  "cols": 3, "rows": 3, "frames": 9, "foot": 3},
 		State.READY:  {"file": "crouch",   "cols": 1, "rows": 1, "frames": 1, "foot": 7},
 		State.HURDLE: {"file": "hurdle",   "cols": 1, "rows": 1, "frames": 1, "foot": 4},
+		State.STUMBLE:{"file": "hurdle-fall","cols": 1, "rows": 1, "frames": 1, "foot": 3},
+		State.JUMP:   {"file": "jump",     "cols": 3, "rows": 2, "frames": 5, "foot": 2},
+		State.LAND:   {"file": "land",     "cols": 1, "rows": 1, "frames": 1, "foot": 12},
 	},
 }
 
@@ -28,6 +31,7 @@ const SPRITE_STATES := {
 
 var state: State = State.IDLE
 var run_speed := 0.0                          # 0..1, drives leg-cycle rate
+var anim01 := -1.0                            # if >=0, plays a sheet through once by this 0..1 progress
 var depth := 1.0                              # lane-depth scale (events set this)
 var _phase := 0.0                             # leg cycle phase
 var _anim_t := 0.0                            # generic state timer (jump arc, celebrate bob)
@@ -51,6 +55,7 @@ func set_state(s: State) -> void:
 	if state != s:
 		state = s
 		_anim_t = 0.0
+		anim01 = -1.0          # default to auto/looping; events re-set for a once-through anim
 		_apply_scale()
 	queue_redraw()
 
@@ -134,7 +139,11 @@ func _draw_sheet(sh: Dictionary) -> void:
 	# Shadow sized to the sprite footprint.
 	draw_ellipse_approx(Vector2(0, -1.0), dw * 0.24, dw * 0.07, Palette.SHADOW)
 	var frames := int(sh["frames"])
-	var idx := int(_phase) % frames if frames > 1 else 0
+	var idx := 0
+	if anim01 >= 0.0:
+		idx = clampi(int(anim01 * frames), 0, frames - 1)   # play once, driven by the event (e.g. jump arc)
+	elif frames > 1:
+		idx = int(_phase) % frames                          # looping cycle (running)
 	var col := idx % int(sh["cols"])
 	var row := idx / int(sh["cols"])
 	var src := Rect2(col * fw, row * fh, fw, fh)
