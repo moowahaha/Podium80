@@ -32,6 +32,11 @@ var depth := 1.0                              # lane-depth scale (events set thi
 var _phase := 0.0                             # leg cycle phase
 var _anim_t := 0.0                            # generic state timer (jump arc, celebrate bob)
 var _spin := 0.0                              # hammer wind-up body spin (throw)
+var _last_x := INF                            # tracks ground movement for distance-based run cycle
+
+# World px the athlete travels per run-cycle frame. Ties the legs to the ground so the feet don't
+# slip; lower = faster leg turnover for the same speed. Tune to the running sprite's stride.
+const RUN_STRIDE_PX := 9.0
 var _sheets: Dictionary = {}                  # State -> {tex, cols, rows, frames, fw, fh}
 
 const H := 26.0                               # nominal procedural height in px
@@ -77,7 +82,15 @@ func _load_sheets() -> void:
 
 func _process(delta: float) -> void:
 	_anim_t += delta
-	if state == State.RUN or state == State.READY or state == State.SWIM:
+	if _last_x == INF:
+		_last_x = position.x
+	var dx := position.x - _last_x
+	_last_x = position.x
+	if state == State.RUN:
+		# Distance-based: advance the leg cycle by how far we actually moved (no foot slip).
+		if absf(dx) < 200.0:                 # ignore teleports (finish snap / reset)
+			_phase += absf(dx) / RUN_STRIDE_PX
+	elif state == State.SWIM:
 		_phase += delta * (6.0 + run_speed * 22.0)
 	if state == State.THROW:
 		_spin += delta * 10.0

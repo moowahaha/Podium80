@@ -58,6 +58,7 @@ func _event_ready() -> void:
 		ath.set_state(Athlete.State.READY)
 		ath.position = Vector2(START_X, LANE_Y[lane])
 		ath.set_depth(LANE_SCALE[lane])
+		ath.z_index = LANE_Y.size() - lane      # front lanes draw on top of back lanes
 		add_child(ath)
 		runners.append({
 			"id": id, "human": Game.is_human(id), "pidx": Game.player_index_of(id),
@@ -210,7 +211,7 @@ func _human_step(r: Dictionary, delta: float) -> void:
 	if r["air"]:
 		r["node"].set_state(Athlete.State.HURDLE)
 	else:
-		r["node"].set_state(Athlete.State.RUN if r["node"].run_speed > 0.05 else Athlete.State.IDLE)
+		r["node"].set_state(Athlete.State.RUN if r["node"].run_speed > 0.012 else Athlete.State.IDLE)
 
 func _ai_step(r: Dictionary) -> void:
 	var x := clampf(elapsed / maxf(r["target"], 0.1), 0.0, 1.0)

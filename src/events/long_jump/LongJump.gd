@@ -114,7 +114,7 @@ func _approach(delta: float) -> void:
 		engine.tap_b()
 	engine.update(delta)
 	ath.run_speed = engine.speed_ratio()
-	ath.set_state(Athlete.State.RUN if ath.run_speed > 0.05 else Athlete.State.IDLE)
+	ath.set_state(Athlete.State.RUN if ath.run_speed > 0.012 else Athlete.State.IDLE)
 	var x := RUNUP_X + engine.distance * PX_PER_M
 	ath.position.x = x
 

@@ -59,6 +59,7 @@ func _event_ready() -> void:
 		ath.set_state(Athlete.State.READY)
 		ath.position = Vector2(START_X, LANE_Y[lane])
 		ath.set_depth(LANE_SCALE[lane])
+		ath.z_index = LANE_Y.size() - lane      # front lanes draw on top of back lanes
 		add_child(ath)
 		var eng: RunEngine = null
 		if human:
