@@ -1,0 +1,13 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <rect width="128" height="128" fill="#1a1740"/>
+  <!-- podium blocks -->
+  <rect x="20" y="72" width="28" height="40" fill="#c8552e"/>
+  <rect x="50" y="56" width="28" height="56" fill="#ffd23f"/>
+  <rect x="80" y="84" width="28" height="28" fill="#5dd39e"/>
+  <!-- numbers -->
+  <text x="34" y="98" font-family="monospace" font-size="18" fill="#14131f" text-anchor="middle">2</text>
+  <text x="64" y="86" font-family="monospace" font-size="20" fill="#14131f" text-anchor="middle">1</text>
+  <text x="94" y="104" font-family="monospace" font-size="16" fill="#14131f" text-anchor="middle">3</text>
+  <!-- star -->
+  <polygon points="64,20 68,34 82,34 71,42 75,56 64,47 53,56 57,42 46,34 60,34" fill="#ffd23f"/>
+</svg>

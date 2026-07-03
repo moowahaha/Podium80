@@ -1,0 +1,47 @@
+; Podium '80 — Godot 4.x project.
+; Native game for MeboboxOS (exported to game.pck; runs on the console's bundled Godot 4 runtime,
+; keyboard-driven via the pad->key injector). See README.md and manifest.json.
+
+config_version=5
+
+[application]
+
+config/name="Podium '80"
+config/description="A fictional 1980 international summer games — retro pixel-art sports."
+run/main_scene="res://src/menus/TitleScreen.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Palette="*res://src/autoload/Palette.gd"
+CountryData="*res://src/autoload/CountryData.gd"
+AthleteData="*res://src/autoload/AthleteData.gd"
+Scoring="*res://src/autoload/Scoring.gd"
+Game="*res://src/autoload/Game.gd"
+Platform="*res://src/autoload/Platform.gd"
+UI="*res://src/autoload/UI.gd"
+AudioBus="*res://src/autoload/AudioBus.gd"
+SceneRouter="*res://src/autoload/SceneRouter.gd"
+CRTOverlay="*res://src/autoload/CRTOverlay.gd"
+DevTools="*res://src/autoload/DevTools.gd"
+
+[display]
+
+window/size/viewport_width=384
+window/size/viewport_height=216
+window/size/window_width_override=1152
+window/size/window_height_override=648
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[physics]
+
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0, 0, 0, 1)

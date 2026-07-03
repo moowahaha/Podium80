@@ -1,0 +1,6 @@
+# Godot 4 — ignore the import/cache folder and build output; commit *.import and *.uid files.
+.godot/
+/build/
+
+# OS / editor
+.DS_Store

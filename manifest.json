@@ -1,0 +1,30 @@
+{
+  "name": "Podium '80",
+  "description": "A fictional 1980 international summer games — five retro pixel-art track & field events.",
+  "author": "Steve Hardisty",
+  "engine": "godot",
+  "godotVersion": 4,
+  "entry": "game.pck",
+  "multiplayer": true,
+  "cover": "cover.png",
+  "controls": {
+    "up": "ArrowUp",
+    "down": "ArrowDown",
+    "left": "ArrowLeft",
+    "right": "ArrowRight",
+    "a": "Space",
+    "b": "b",
+    "lb": "q",
+    "rb": "w"
+  },
+  "controlsP2": {
+    "up": "i",
+    "down": "k",
+    "left": "j",
+    "right": "l",
+    "a": "f",
+    "b": "g",
+    "lb": "h",
+    "rb": "n"
+  }
+}
