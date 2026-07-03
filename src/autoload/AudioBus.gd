@@ -9,10 +9,15 @@ extends Node
 const MIX_RATE := 22050
 const POOL_SIZE := 10
 
+const MUSIC_DIR := "res://assets/music/"
+const MUSIC_EXTS := [".ogg", ".mp3", ".wav"]
+
 var _sfx: Dictionary = {}                 # name -> AudioStreamWAV
 var _pool: Array[AudioStreamPlayer] = []
 var _next := 0
 var _crowd_player: AudioStreamPlayer
+var _music_player: AudioStreamPlayer
+var _music_key := &""
 
 func _ready() -> void:
 	for i in POOL_SIZE:
@@ -24,7 +29,41 @@ func _ready() -> void:
 	_crowd_player.bus = &"Master"
 	_crowd_player.volume_db = -18.0
 	add_child(_crowd_player)
+	_music_player = AudioStreamPlayer.new()
+	_music_player.bus = &"Master"
+	add_child(_music_player)
 	_build_library()
+
+## Play a looping background track by key: loads assets/music/<key>.{ogg,mp3,wav} if present and loops
+## it. Calling with the SAME key that's already playing is a no-op (music continues seamlessly across
+## menu screens). No file for that key -> silence. This is how supplied music drops in per screen/event.
+func play_music(key: StringName, volume_db := -9.0) -> void:
+	if key == _music_key and _music_player.playing:
+		_music_player.volume_db = volume_db
+		return
+	var path := ""
+	for ext in MUSIC_EXTS:
+		var p := "%s%s%s" % [MUSIC_DIR, key, ext]
+		if ResourceLoader.exists(p):
+			path = p
+			break
+	_music_key = key
+	if path == "":
+		_music_player.stop()
+		_music_player.stream = null
+		return
+	var s: AudioStream = load(path)
+	if s is AudioStreamOggVorbis or s is AudioStreamMP3:
+		s.loop = true
+	elif s is AudioStreamWAV:
+		s.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	_music_player.stream = s
+	_music_player.volume_db = volume_db
+	_music_player.play()
+
+func stop_music() -> void:
+	_music_key = &""
+	_music_player.stop()
 
 func play(name: StringName, volume_db := 0.0, pitch := 1.0) -> void:
 	var stream: AudioStreamWAV = _sfx.get(name)

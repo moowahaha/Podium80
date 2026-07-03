@@ -8,7 +8,7 @@ class_name CameraManager
 var targets: Array[Node2D] = []
 var world_width := 720.0
 var fixed_y := 120.0
-var margin := 120.0            # world px of breathing room around the outermost targets
+var margin := 300.0            # world px of breathing room around the outermost targets
 var min_zoom := 0.62           # most zoomed OUT
 var max_zoom := 1.15           # most zoomed IN (single runner / converged)
 var follow_lerp := 8.0

@@ -6,11 +6,14 @@ const TITLE_SCENE := "res://src/menus/TitleScreen.tscn"
 
 # Screen slots per finishing place: 1st centre+tallest, 2nd left, 3rd right.
 const SLOTS := [
-	{"x": 192.0, "top": 120.0, "w": 44.0},   # 1st
-	{"x": 142.0, "top": 138.0, "w": 44.0},   # 2nd
-	{"x": 242.0, "top": 150.0, "w": 44.0},   # 3rd
+	{"x": 480.0, "top": 300.0, "w": 110.0},   # 1st
+	{"x": 355.0, "top": 345.0, "w": 110.0},   # 2nd
+	{"x": 605.0, "top": 375.0, "w": 110.0},   # 3rd
 ]
 const MEDAL := [Color("ffd23f"), Color("cfcfe0"), Color("cd7f32")]
+
+func _music_key() -> StringName:
+	return &"podium"
 
 var _t := 0.0
 var _busy := false
@@ -21,14 +24,14 @@ func _screen_ready() -> void:
 	_rows = Game.standings_sorted()
 
 	var champ_id: StringName = _rows[0]["country"] if not _rows.is_empty() else CountryData.all_ids()[0]
-	var head := UI.center_label("CHAMPIONS OF THE 1980 GAMES", 11, Palette.HIGHLIGHT)
-	head.position = Vector2(0, 12)
-	head.size = Vector2(Palette.BASE_WIDTH, 12)
+	var head := UI.center_label("CHAMPIONS OF THE 1980 GAMES", 28, Palette.HIGHLIGHT)
+	head.position = Vector2(0, 30)
+	head.size = Vector2(Palette.BASE_WIDTH, 30)
 	add_child(head)
 
-	var winner := UI.center_label("%s  —  %s" % [CountryData.name_of(champ_id), Game.name_of(champ_id)], 9, CountryData.accent_of(champ_id))
-	winner.position = Vector2(0, 26)
-	winner.size = Vector2(Palette.BASE_WIDTH, 10)
+	var winner := UI.center_label("%s  —  %s" % [CountryData.name_of(champ_id), Game.name_of(champ_id)], 22, CountryData.accent_of(champ_id))
+	winner.position = Vector2(0, 65)
+	winner.size = Vector2(Palette.BASE_WIDTH, 25)
 	add_child(winner)
 
 	for place in mini(3, _rows.size()):
@@ -37,29 +40,30 @@ func _screen_ready() -> void:
 
 		var flag := FlagRenderer.new()
 		flag.set_country(id)
-		flag.position = Vector2(slot["x"] - 15.0, slot["top"] - 40.0)
-		flag.size = Vector2(30, 20)
+		flag.position = Vector2(slot["x"] - 37.5, slot["top"] - 100.0)
+		flag.size = Vector2(75, 50)
 		add_child(flag)
 
 		var ath := Athlete.new()
 		ath.set_country(id)
 		ath.set_state(Athlete.State.CELEBRATE if place == 0 else Athlete.State.IDLE)
 		ath.position = Vector2(slot["x"], slot["top"])
+		ath.scale = Vector2.ONE * Palette.ATHLETE_SCALE
 		add_child(ath)
 
-		var nm := UI.center_label(CountryData.abbrev_of(id), 8, Palette.INK)
-		nm.position = Vector2(slot["x"] - slot["w"] / 2.0, slot["top"] + 8.0)
-		nm.size = Vector2(slot["w"], 8)
+		var nm := UI.center_label(CountryData.abbrev_of(id), 20, Palette.INK)
+		nm.position = Vector2(slot["x"] - slot["w"] / 2.0, slot["top"] + 20.0)
+		nm.size = Vector2(slot["w"], 22)
 		add_child(nm)
 
-		var pts := UI.center_label("%d PTS" % int(_rows[place]["points"]), 7, Palette.INK)
-		pts.position = Vector2(slot["x"] - slot["w"] / 2.0, slot["top"] + 18.0)
-		pts.size = Vector2(slot["w"], 8)
+		var pts := UI.center_label("%d PTS" % int(_rows[place]["points"]), 18, Palette.INK)
+		pts.position = Vector2(slot["x"] - slot["w"] / 2.0, slot["top"] + 45.0)
+		pts.size = Vector2(slot["w"], 20)
 		add_child(pts)
 
-	var prompt := UI.center_label("PRESS  A  TO RETURN TO TITLE", 8, Palette.PAPER)
-	prompt.position = Vector2(0, 194)
-	prompt.size = Vector2(Palette.BASE_WIDTH, 8)
+	var prompt := UI.center_label("PRESS  A  TO RETURN TO TITLE", 20, Palette.PAPER)
+	prompt.position = Vector2(0, 485)
+	prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	add_child(prompt)
 
 	# Confetti.
@@ -81,10 +85,10 @@ func _screen_ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	for c in _confetti:
-		c["pos"] += c["vel"] * delta
-		c["pos"].x += sin(_t * 3.0 + c["sw"]) * 8.0 * delta
-		if c["pos"].y > Palette.BASE_HEIGHT + 4.0:
-			c["pos"].y = -4.0
+		c["pos"] += c["vel"] * delta * 2.5
+		c["pos"].x += sin(_t * 3.0 + c["sw"]) * 20.0 * delta
+		if c["pos"].y > Palette.BASE_HEIGHT + 10.0:
+			c["pos"].y = -10.0
 			c["pos"].x = randf() * Palette.BASE_WIDTH
 	queue_redraw()
 
@@ -107,11 +111,11 @@ func _paint_bg() -> void:
 	# Spotlights.
 	for sx in [0.25, 0.5, 0.75]:
 		var origin := Vector2(w * sx, h)
-		var aim := Vector2(w * sx + sin(_t + sx * 6.0) * 30.0, 40.0)
+		var aim := Vector2(w * sx + sin(_t + sx * 6.0) * 75.0, 100.0)
 		var dir := (aim - origin).normalized()
 		var perp := Vector2(-dir.y, dir.x)
 		var far := origin + dir * (h * 1.1)
-		draw_colored_polygon(PackedVector2Array([origin, far + perp * 20.0, far - perp * 20.0]), Color(1, 0.95, 0.7, 0.05))
+		draw_colored_polygon(PackedVector2Array([origin, far + perp * 50.0, far - perp * 50.0]), Color(1, 0.95, 0.7, 0.05))
 
 	# Podium blocks.
 	for place in mini(3, _rows.size()):
@@ -120,9 +124,9 @@ func _paint_bg() -> void:
 		var bw: float = slot["w"]
 		var rect := Rect2(slot["x"] - bw / 2.0, top, bw, h - top)
 		draw_rect(rect, MEDAL[place].darkened(0.1))
-		draw_rect(rect, Palette.INK, false, 1.0)
-		draw_rect(Rect2(rect.position, Vector2(bw, 3)), MEDAL[place])
+		draw_rect(rect, Palette.INK, false, 2.5)
+		draw_rect(Rect2(rect.position, Vector2(bw, 7.5)), MEDAL[place])
 
 	# Confetti.
 	for c in _confetti:
-		draw_rect(Rect2(c["pos"], Vector2(2, 3)), c["col"])
+		draw_rect(Rect2(c["pos"], Vector2(5, 7.5)), c["col"])

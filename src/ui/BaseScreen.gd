@@ -22,11 +22,16 @@ func _ready() -> void:
 		_menu_bg_loaded = true
 		if ResourceLoader.exists(MENU_BG):
 			_menu_bg = load(MENU_BG)
+	AudioBus.play_music(_music_key())
 	_screen_ready()
 
 ## Override in subclasses.
 func _screen_ready() -> void:
 	pass
+
+## Music track key for this screen (loads assets/music/<key>.ogg). Menu screens share "menu".
+func _music_key() -> StringName:
+	return &"menu"
 
 func _draw() -> void:
 	_paint_bg()

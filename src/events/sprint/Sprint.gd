@@ -7,12 +7,12 @@ extends EventBase
 
 enum St { INTRO, MARKS, SET, RUN, DONE }
 
-const PX_PER_M := 7.0
+const PX_PER_M := 17.5
 const DIST_M := 100.0
-const START_X := 46.0
+const START_X := 115.0
 const FINISH_X := START_X + DIST_M * PX_PER_M
-const WORLD_W := FINISH_X + 54.0
-const LANE_Y := [196.0, 188.0, 180.0, 172.0]
+const WORLD_W := FINISH_X + 135.0
+const LANE_Y := [490.0, 470.0, 450.0, 430.0]
 const LANE_SCALE := [1.0, 0.94, 0.88, 0.82]
 const RACE_TIMEOUT := 22.0
 
@@ -26,6 +26,9 @@ var set_wait := 1.2
 var elapsed := 0.0
 var _clock: Label
 var _false_count := 0
+
+func _music_key() -> StringName:
+	return &"track"
 
 func _event_ready() -> void:
 	ai_values = Game.roll_ai_values()
@@ -53,7 +56,7 @@ func _event_ready() -> void:
 		ath.set_country(id)
 		ath.set_state(Athlete.State.READY)
 		ath.position = Vector2(START_X, LANE_Y[lane])
-		ath.scale = Vector2(LANE_SCALE[lane], LANE_SCALE[lane])
+		ath.scale = Vector2(LANE_SCALE[lane], LANE_SCALE[lane]) * Palette.ATHLETE_SCALE
 		add_child(ath)
 		var human := Game.is_human(id)
 		runners.append({
@@ -66,12 +69,12 @@ func _event_ready() -> void:
 
 	cam = CameraManager.new()
 	add_child(cam)
-	cam.setup(WORLD_W, 140.0)
+	cam.setup(WORLD_W, 350.0)
 	cam.set_targets(runners.map(func(r): return r["node"]))
 	cam.make_current()
 
-	_clock = UI.label("0.00", 10, Palette.PAPER)
-	_clock.position = Vector2(Palette.BASE_WIDTH - 44, 4)
+	_clock = UI.label("0.00", 25, Palette.PAPER)
+	_clock.position = Vector2(Palette.BASE_WIDTH - 110, 10)
 	hud.add_child(_clock)
 
 	AudioBus.loop_crowd(true, -22.0)
@@ -208,11 +211,11 @@ func _finish_race() -> void:
 
 func _draw() -> void:
 	# Start + finish lines (world space).
-	draw_line(Vector2(START_X, 150), Vector2(START_X, 208), Palette.TRACK_LINE, 1.0)
+	draw_line(Vector2(START_X, 375), Vector2(START_X, 520), Palette.TRACK_LINE, 2.5)
 	# Checkered finish.
-	var y := 150.0
+	var y := 375.0
 	var on := true
-	while y < 208.0:
-		draw_rect(Rect2(FINISH_X - 2.0, y, 4.0, 4.0), Palette.PAPER if on else Palette.INK)
+	while y < 520.0:
+		draw_rect(Rect2(FINISH_X - 5.0, y, 10.0, 10.0), Palette.PAPER if on else Palette.INK)
 		on = not on
-		y += 4.0
+		y += 10.0

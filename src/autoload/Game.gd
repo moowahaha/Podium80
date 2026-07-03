@@ -34,9 +34,9 @@ const EVENTS: Array[Dictionary] = [
 		"ai": {"mean": 69.0, "sd": 6.5, "min": 38.0, "max": 84.0},
 	},
 	{
-		"id": &"vault", "title": "VAULT", "unit": "pts", "higher_better": true,
-		"two_player": false, "scene": "res://src/events/vault/Vault.tscn",
-		"ai": {"mean": 54.0, "sd": 16.0, "min": 0.0, "max": 100.0},
+		"id": &"swim", "title": "100M SWIM", "unit": "s", "higher_better": false,
+		"two_player": true, "scene": "res://src/events/swim/Swim.tscn",
+		"ai": {"mean": 17.5, "sd": 1.4, "min": 14.5, "max": 22.0},
 	},
 ]
 
@@ -47,6 +47,12 @@ var two_player: bool = false
 var athlete_names: Dictionary = {}                # country_id -> String
 var current_event_index: int = 0
 var event_results: Array[Dictionary] = []         # [{ event:StringName, ranked:Array }]
+
+# Menu selection carried from ModeSelect -> CountrySelect.
+var single_event_mode: bool = false               # true = play one event, then back to the menu
+var pending_players: int = 1                       # 1 or 2 (chosen on the mode screen)
+var pending_mode: String = "championship"          # "championship" or "single"
+var pending_event_index: int = 0                   # which event, when single
 
 func _ready() -> void:
 	rng.randomize()
@@ -64,7 +70,14 @@ func start_championship(human_country_ids: Array) -> void:
 		athlete_names[id] = AthleteData.pick_name(id, rng)
 	current_event_index = 0
 	event_results.clear()
+	single_event_mode = false
 	championship_started.emit()
+
+## Play a single event (chosen from the menu), then return to the menu instead of the podium.
+func start_single_event(event_index: int, human_country_ids: Array) -> void:
+	start_championship(human_country_ids)
+	single_event_mode = true
+	current_event_index = clampi(event_index, 0, EVENTS.size() - 1)
 
 func reset() -> void:
 	participants.clear()

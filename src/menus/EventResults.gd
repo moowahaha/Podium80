@@ -4,6 +4,7 @@ extends BaseScreen
 
 const HUB := "res://src/menus/ChampionshipHub.tscn"
 const PODIUM := "res://src/menus/Podium.tscn"
+const MODE_SELECT := "res://src/menus/ModeSelect.tscn"
 
 var _busy := false
 var _reveal := 0.0
@@ -12,44 +13,44 @@ func _screen_ready() -> void:
 	var ev := Game.current_event()
 	var ranked := Game.last_result()
 
-	var t := UI.center_label("%s — RESULTS" % ev["title"], 12, Palette.HIGHLIGHT)
-	t.position = Vector2(0, 14)
-	t.size = Vector2(Palette.BASE_WIDTH, 14)
+	var t := UI.center_label("%s — RESULTS" % ev["title"], 30, Palette.HIGHLIGHT)
+	t.position = Vector2(0, 35)
+	t.size = Vector2(Palette.BASE_WIDTH, 35)
 	add_child(t)
 
-	var y := 44.0
+	var y := 110.0
 	var medal := [Palette.HIGHLIGHT, Color("c0c0cc"), Color("cd7f32"), Palette.PANEL_LIGHT]
 	for i in ranked.size():
 		var r: Dictionary = ranked[i]
 		var id: StringName = r["country"]
 
-		var place := UI.label("%d" % (i + 1), 12, medal[mini(i, 3)])
-		place.position = Vector2(50, y)
+		var place := UI.label("%d" % (i + 1), 30, medal[mini(i, 3)])
+		place.position = Vector2(125, y)
 		add_child(place)
 
 		var flag := FlagRenderer.new()
 		flag.waving = false
 		flag.set_country(id)
-		flag.position = Vector2(68, y + 1)
-		flag.size = Vector2(20, 13)
+		flag.position = Vector2(170, y + 2)
+		flag.size = Vector2(50, 32)
 		add_child(flag)
 
-		var nm := UI.label("%s  %s" % [CountryData.abbrev_of(id), Game.name_of(id)], 8, _color(id))
-		nm.position = Vector2(94, y + 2)
+		var nm := UI.label("%s  %s" % [CountryData.abbrev_of(id), Game.name_of(id)], 20, _color(id))
+		nm.position = Vector2(235, y + 5)
 		add_child(nm)
 
-		var mark := UI.label(_format(float(r["value"]), String(ev["unit"])), 8, Palette.PAPER)
-		mark.position = Vector2(228, y + 2)
+		var mark := UI.label(_format(float(r["value"]), String(ev["unit"])), 20, Palette.PAPER)
+		mark.position = Vector2(570, y + 5)
 		add_child(mark)
 
-		var pts := UI.label("+%d" % int(r["points"]), 8, Palette.GOOD)
-		pts.position = Vector2(300, y + 2)
+		var pts := UI.label("+%d" % int(r["points"]), 20, Palette.GOOD)
+		pts.position = Vector2(750, y + 5)
 		add_child(pts)
-		y += 22.0
+		y += 55.0
 
-	var prompt := UI.center_label("PRESS  A  TO CONTINUE", 8, Palette.PAPER)
-	prompt.position = Vector2(0, 190)
-	prompt.size = Vector2(Palette.BASE_WIDTH, 10)
+	var prompt := UI.center_label("PRESS  A  TO CONTINUE", 20, Palette.PAPER)
+	prompt.position = Vector2(0, 475)
+	prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	add_child(prompt)
 
 	AudioBus.play(&"points")
@@ -74,7 +75,9 @@ func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed(Platform.act(0, &"a")):
 		_busy = true
 		AudioBus.play(&"select")
-		if Game.is_championship_over():
+		if Game.single_event_mode:
+			SceneRouter.goto_scene(MODE_SELECT)
+		elif Game.is_championship_over():
 			SceneRouter.goto_scene(PODIUM)
 		else:
 			Game.advance_event()

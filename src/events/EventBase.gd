@@ -19,11 +19,17 @@ var _finished := false
 
 func _ready() -> void:
 	_build_hud()
+	if _music_key() != &"":
+		AudioBus.play_music(_music_key())
 	_event_ready()
 
 ## Override in subclasses.
 func _event_ready() -> void:
 	pass
+
+## Music track key for this event (loads assets/music/<key>.ogg), paired with its stadium backdrop.
+func _music_key() -> StringName:
+	return &""
 
 func _build_hud() -> void:
 	hud = CanvasLayer.new()
@@ -31,23 +37,23 @@ func _build_hud() -> void:
 	add_child(hud)
 
 	var ev := Game.current_event()
-	_title = UI.label(String(ev["title"]), 10, Palette.HIGHLIGHT)
-	_title.position = Vector2(6, 4)
+	_title = UI.label(String(ev["title"]), 25, Palette.HIGHLIGHT)
+	_title.position = Vector2(15, 10)
 	hud.add_child(_title)
 
-	_counter = UI.label("EVENT %d/%d" % [Game.current_event_index + 1, Game.event_count()], 7, Palette.PAPER)
-	_counter.position = Vector2(6, 16)
+	_counter = UI.label("EVENT %d/%d" % [Game.current_event_index + 1, Game.event_count()], 18, Palette.PAPER)
+	_counter.position = Vector2(15, 40)
 	hud.add_child(_counter)
 
-	_banner = UI.center_label("", 16, Palette.PAPER)
-	_banner.position = Vector2(0, 78)
-	_banner.size = Vector2(Palette.BASE_WIDTH, 24)
+	_banner = UI.center_label("", 40, Palette.PAPER)
+	_banner.position = Vector2(0, 195)
+	_banner.size = Vector2(Palette.BASE_WIDTH, 60)
 	_banner.modulate.a = 0.0
 	hud.add_child(_banner)
 
-	_prompt = UI.center_label("", 8, Palette.PAPER)
-	_prompt.position = Vector2(0, 200)
-	_prompt.size = Vector2(Palette.BASE_WIDTH, 10)
+	_prompt = UI.center_label("", 20, Palette.PAPER)
+	_prompt.position = Vector2(0, 500)
+	_prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	hud.add_child(_prompt)
 
 func _process(delta: float) -> void:

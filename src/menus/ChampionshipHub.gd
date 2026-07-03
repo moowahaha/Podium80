@@ -14,42 +14,42 @@ func _screen_ready() -> void:
 		# Safety: reached without a championship (e.g. direct run) — start a default one.
 		Game.start_championship([CountryData.all_ids()[0]])
 
-	var t := UI.center_label("CHAMPIONSHIP STANDINGS", 12, Palette.HIGHLIGHT)
-	t.position = Vector2(0, 12)
-	t.size = Vector2(Palette.BASE_WIDTH, 14)
+	var t := UI.center_label("CHAMPIONSHIP STANDINGS", 30, Palette.HIGHLIGHT)
+	t.position = Vector2(0, 30)
+	t.size = Vector2(Palette.BASE_WIDTH, 35)
 	add_child(t)
 
 	# Standings rows built fresh each entry.
 	var rows := Game.standings_sorted()
-	var y := 40.0
+	var y := 100.0
 	for r in rows:
 		var id: StringName = r["country"]
 		var flag := FlagRenderer.new()
 		flag.waving = false
 		flag.set_country(id)
-		flag.position = Vector2(70, y)
-		flag.size = Vector2(20, 13)
+		flag.position = Vector2(175, y)
+		flag.size = Vector2(50, 32)
 		add_child(flag)
 		_flags.append(flag)
 
-		var nm := UI.label(CountryData.name_of(id), 8, _row_color(id))
-		nm.position = Vector2(96, y + 2)
+		var nm := UI.label(CountryData.name_of(id), 20, _row_color(id))
+		nm.position = Vector2(240, y + 5)
 		add_child(nm)
 
-		var pts := UI.label("%d PTS" % int(r["points"]), 8, Palette.PAPER)
-		pts.position = Vector2(250, y + 2)
+		var pts := UI.label("%d PTS" % int(r["points"]), 20, Palette.PAPER)
+		pts.position = Vector2(625, y + 5)
 		add_child(pts)
-		y += 22.0
+		y += 55.0
 
 	var ev := Game.current_event()
-	var nxt := UI.center_label("NEXT — EVENT %d/%d:  %s" % [Game.current_event_index + 1, Game.event_count(), ev["title"]], 9, Palette.PAPER)
-	nxt.position = Vector2(0, 150)
-	nxt.size = Vector2(Palette.BASE_WIDTH, 12)
+	var nxt := UI.center_label("NEXT — EVENT %d/%d:  %s" % [Game.current_event_index + 1, Game.event_count(), ev["title"]], 22, Palette.PAPER)
+	nxt.position = Vector2(0, 375)
+	nxt.size = Vector2(Palette.BASE_WIDTH, 30)
 	add_child(nxt)
 
-	var prompt := UI.center_label("PRESS  A  TO COMPETE      B  QUIT", 8, Palette.GOOD)
-	prompt.position = Vector2(0, 186)
-	prompt.size = Vector2(Palette.BASE_WIDTH, 10)
+	var prompt := UI.center_label("PRESS  A  TO COMPETE      B  QUIT", 20, Palette.GOOD)
+	prompt.position = Vector2(0, 465)
+	prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	add_child(prompt)
 
 func _row_color(id: StringName) -> Color:

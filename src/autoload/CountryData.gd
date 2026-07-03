@@ -8,7 +8,7 @@ extends Node
 ##
 ## No protected marks: flags are simple procedural band+emblem placeholders drawn by FlagRenderer.
 
-const ORDER: Array[StringName] = [&"USSR", &"GDR", &"GBR", &"FRA"]
+const ORDER: Array[StringName] = [&"USSR", &"GDR", &"GBR", &"AUS"]
 
 const COUNTRIES := {
 	&"USSR": {
@@ -53,18 +53,18 @@ const COUNTRIES := {
 			"emblem": null,
 		},
 	},
-	&"FRA": {
-		"name": "FRANCE",
-		"long_name": "FRANCE",
-		"abbrev": "FRA",
-		"accent": Color("3b7be2"),
-		"kit_primary": Color("2f5fd0"),
-		"kit_secondary": Color("e6e6ea"),
+	&"AUS": {
+		"name": "AUSTRALIA",
+		"long_name": "AUSTRALIA",
+		"abbrev": "AUS",
+		"accent": Color("3bbf5a"),          # green — distinct from GDR gold
+		"kit_primary": Color("2f8f3f"),     # green
+		"kit_secondary": Color("f4d84a"),   # gold
 		"kit_skin": Color("e8b48c"),
 		"flag": {
-			"orient": "vertical",
-			"bands": [Color("2b3aa0"), Color("f0f0f4"), Color("d21f33")],
-			"emblem": null,
+			"orient": "horizontal",
+			"bands": [Color("2e8b57")],
+			"emblem": {"shape": "star", "color": Color("f4d84a"), "pos": Vector2(0.28, 0.5), "size": 0.18},
 		},
 	},
 }

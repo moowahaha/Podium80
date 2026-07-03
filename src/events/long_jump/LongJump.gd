@@ -7,10 +7,10 @@ extends EventBase
 
 enum St { APPROACH, FLIGHT, LANDED, BETWEEN, DONE }
 
-const PX_PER_M := 12.0
-const RUNUP_X := 24.0
-const BOARD_X := 236.0
-const WORLD_W := 470.0
+const PX_PER_M := 30.0
+const RUNUP_X := 60.0
+const BOARD_X := 590.0
+const WORLD_W := 1175.0
 const ATTEMPTS := 3
 
 var stadium: Stadium
@@ -20,6 +20,7 @@ var engine := RunEngine.new()
 var state: St = St.APPROACH
 var attempt := 1
 var best_m := 0.0
+var target := 0.0                # best AI mark to beat (shown to the player)
 var ai_values: Dictionary = {}
 var human_id: StringName
 
@@ -32,9 +33,14 @@ var jump_h := 0.0
 var measured := 0.0
 var _info: Label
 
+func _music_key() -> StringName:
+	return &"long_jump"
+
 func _event_ready() -> void:
 	ai_values = Game.roll_ai_values()
 	human_id = humans()[0] if not humans().is_empty() else Game.participants[0]
+	for v in ai_values.values():
+		target = maxf(target, float(v))
 
 	stadium = Stadium.new()
 	stadium.world_width = WORLD_W
@@ -44,17 +50,18 @@ func _event_ready() -> void:
 
 	ath = Athlete.new()
 	ath.set_country(human_id)
+	ath.scale = Vector2.ONE * Palette.ATHLETE_SCALE
 	add_child(ath)
 
 	cam = CameraManager.new()
 	add_child(cam)
-	cam.setup(WORLD_W, 140.0)
+	cam.setup(WORLD_W, 350.0)
 	cam.max_zoom = 1.2
 	cam.set_targets([ath])
 	cam.make_current()
 
-	_info = UI.label("", 8, Palette.PAPER)
-	_info.position = Vector2(6, 28)
+	_info = UI.label("", 20, Palette.PAPER)
+	_info.position = Vector2(15, 70)
 	hud.add_child(_info)
 
 	AudioBus.loop_crowd(true, -22.0)
@@ -71,7 +78,7 @@ func _begin_attempt() -> void:
 	set_prompt("ALTERNATE  A / B  TO RUN     LB  TO JUMP AT THE BOARD")
 
 func _update_info() -> void:
-	_info.text = "ATTEMPT %d/%d    BEST %.2f m" % [attempt, ATTEMPTS, best_m]
+	_info.text = "ATTEMPT %d/%d    BEST %.2f m    TARGET %.2f m" % [attempt, ATTEMPTS, best_m, target]
 
 func _process(delta: float) -> void:
 	super._process(delta)
@@ -109,7 +116,7 @@ func _take_off(x: float) -> void:
 	measured = maxf(0.0, jump_len_m - (BOARD_X - x) / PX_PER_M)   # measured from the board
 	land_x = x + jump_len_m * PX_PER_M
 	flight_dur = clampf(0.5 + jump_len_m * 0.06, 0.5, 1.1)
-	jump_h = 12.0 + jump_len_m * 2.2
+	jump_h = 30.0 + jump_len_m * 5.5
 	flight_t = 0.0
 	state = St.FLIGHT
 	ath.set_state(Athlete.State.JUMP)
@@ -157,11 +164,15 @@ func _finish() -> void:
 
 func _draw() -> void:
 	# Sand pit + take-off board over the track.
-	draw_rect(Rect2(BOARD_X, stadium.ground_y - 2.0, WORLD_W - BOARD_X, 14.0), Color("d9c48a"))
-	draw_rect(Rect2(BOARD_X - 3.0, stadium.ground_y - 3.0, 4.0, 6.0), Palette.PAPER)   # board
+	draw_rect(Rect2(BOARD_X, stadium.ground_y - 5.0, WORLD_W - BOARD_X, 35.0), Color("d9c48a"))
+	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board
 	# distance guide marks every metre from the board
 	for m in range(1, 12):
 		var mx := BOARD_X + m * PX_PER_M
 		if mx > WORLD_W:
 			break
-		draw_rect(Rect2(mx, stadium.ground_y + 8.0, 1.0, 3.0), Palette.INK)
+		draw_rect(Rect2(mx, stadium.ground_y + 20.0, 2.5, 7.5), Palette.INK)
+	# target-to-beat line
+	if target > 0.0:
+		var tx := BOARD_X + target * PX_PER_M
+		draw_line(Vector2(tx, stadium.ground_y - 40.0), Vector2(tx, stadium.ground_y + 30.0), Palette.HIGHLIGHT, 2.5)

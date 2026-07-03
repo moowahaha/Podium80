@@ -7,7 +7,7 @@ class_name Athlete
 ## Replaceable later: swap _draw for an AnimatedSprite2D without touching callers — the public API
 ## (set_country, state, run cycle, facing) is what gameplay uses.
 
-enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE }
+enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE, SWIM }
 
 @export var country_id: StringName = &"USSR"
 @export var facing := 1                       # +1 right, -1 left
@@ -32,7 +32,7 @@ func set_state(s: State) -> void:
 
 func _process(delta: float) -> void:
 	_anim_t += delta
-	if state == State.RUN or state == State.READY:
+	if state == State.RUN or state == State.READY or state == State.SWIM:
 		_phase += delta * (6.0 + run_speed * 22.0)
 	if state == State.THROW:
 		_spin += delta * 10.0
@@ -54,6 +54,8 @@ func _draw() -> void:
 			_draw_celebrate(kp, ks, skin, f)
 		State.THROW:
 			_draw_throw(kp, ks, skin, f)
+		State.SWIM:
+			_draw_swim(kp, ks, skin, f)
 		_:
 			_draw_upright(kp, ks, skin, f)
 
@@ -124,6 +126,26 @@ func _draw_celebrate(kp: Color, ks: Color, skin: Color, f: float) -> void:
 	_limb(shoulder + Vector2(0, 1), shoulder + Vector2(-5.0, -6.0), skin, 2.0)
 	_limb(shoulder + Vector2(0, 1), shoulder + Vector2(5.0, -6.0), skin, 2.0)
 	draw_circle(shoulder + Vector2(0, -3.0), 3.0, skin)
+
+func _draw_swim(kp: Color, ks: Color, skin: Color, f: float) -> void:
+	# Side-on freestyle at the water surface. Origin sits on the surface line.
+	var sw := sin(_phase)
+	var yb := -2.0
+	# wake / kick splash behind
+	draw_ellipse_approx(Vector2(-f * 9.0, 0.0), 3.0, 1.5, Color(1, 1, 1, 0.45))
+	# submerged legs (faint) trailing behind
+	draw_line(Vector2(-f * 6.0, yb + 1.0), Vector2(-f * 11.0, yb + 1.0 + sw * 1.5), ks, 2.0)
+	# body along the surface
+	draw_rect(Rect2(-7.0, yb - 1.5, 14.0, 4.0), kp)
+	# head at the front with a cap
+	var head := Vector2(f * 7.0, yb - 1.0 + sw * 0.4)
+	draw_circle(head, 2.5, skin)
+	draw_rect(Rect2(head.x - 2.5, head.y - 2.5, 5.0, 2.0), ks)
+	# recovering arm arcs over the water on the up-stroke
+	var shoulder := Vector2(f * 2.0, yb - 1.0)
+	var lift: float = maxf(0.0, sw)
+	var hand := shoulder + Vector2(f * (2.0 + 4.0 * lift), -(1.0 + 6.0 * lift))
+	draw_line(shoulder, hand, skin, 2.0)
 
 func _draw_fallen(kp: Color, ks: Color, skin: Color, f: float) -> void:
 	# Lying on the ground.

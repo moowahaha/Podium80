@@ -18,8 +18,8 @@ championship points; the nation with the most points after all five wins the pod
 | 1 | 100m Sprint | Countdown + false-start detection, alternate **A/B** to run (light fatigue), dynamic-zoom 2-player races |
 | 2 | Long Jump | Alternate **A/B** for run-up, **LB** to take off on the board — distance = speed × timing; 3 attempts |
 | 3 | 110m Hurdles | Run with **A/B**, **LB** to clear each hurdle — clips slow you, collisions stumble; 2-player |
-| 4 | Hammer Throw | Rhythmic **A/B** to spin, **◄►** to balance, **LB** to release in the legal sector; 3 attempts |
-| 5 | Vault | Pick a difficulty, then a rhythm/reflex prompt sequence (**D-pad + A/B/LB/RB**) — one miss and you fall |
+| 4 | Hammer Throw | Rhythmic **A/B** to spin, **LB** to release in the legal sector; 3 attempts, target shown |
+| 5 | 100m Swim | **LB** to dive, alternate **A/B** to stroke, **LB** to flip-turn at the wall; 2-player |
 
 ## Controls
 

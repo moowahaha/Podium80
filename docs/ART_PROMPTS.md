@@ -1,94 +1,101 @@
-# Podium '80 — Art Generation Prompts (SNES style)
+# Podium '80 — Paired Background + Music Prompts (SNES art · NES chiptune · Soviet-1980)
 
-Ready-to-paste prompts for generating the **background / stadium art** that is better produced as
-images than programmed. The game already draws athletes, UI, flags, crowds and effects procedurally;
-these prompts cover the large painted backdrops.
+Each screen/event has a **background image** (ChatGPT / image gen) and a **matching music track** (Suno)
+that share a filename key, so they drop in together and play as a pair. Drop the files at the paths
+shown — no code change. Fallbacks (procedural art / silence) apply until then.
 
-Drop finished images into the game at the paths listed — **no code changes needed**; each screen/event
-auto-detects its image and falls back to procedural art if absent.
+Art vibe: **overtly stereotypical Russian / Soviet 1980** — red banners, gold-star and folk motifs,
+brutalist concrete stands, onion-dome skyline silhouettes, red running track — as bright **16-bit
+SNES pixel art**. Music: **8-bit / NES chiptune** (square + triangle + noise channels), leaning into
+Russian cliché melodies (*Korobeiniki / Kalinka* energy, Soviet-march feel) but authentically chiptune.
+**No Olympic rings/marks/word, no real mascots; keep any emblem generic/invented.**
 
----
-
-## Global style (paste at the top of every prompt)
-
-> 16-bit **SNES-era pixel art**, early-1990s console sports game look (think *Super Track & Field* /
-> *World Class Athletics*). Rich but limited palette (~64–128 colours), crisp dithering, chunky
-> readable pixels, strong warm 1980s stadium mood, bright blue sky, colourful crowds. Clean flat
-> shading with subtle gradients, no photorealism, no modern lighting, no gradients-that-look-3D.
-> **No text, no logos, no numbers, no watermark.** **Do NOT include the Olympic rings, the word
-> "Olympic", torches shaped like the official one, or any real mascot** — this is a *fictional*
-> international games. Eastern-bloc 1980 atmosphere is welcome (concrete stands, red running track,
-> tall floodlight pylons, rows of plain coloured pennants/flags) but keep all emblems generic and
-> invented.
-
-Output requirements: exact pixel dimensions given per asset, **16:9**, no border, fill the frame.
+**Resolution:** the game renders at **960×540** (×2 to 1080p). Athlete sprites are ~**96 px tall**
+(154×154 frames), so a standing figure is roughly a **fifth** of the screen height.
 
 ---
 
-## 1. Title / menu background  →  `assets/menu/background.png`  (384×216)
+## Global blocks (paste at the top of each)
 
-*(One is already supplied. Use this to regenerate or make variants.)*
+**IMAGE (attach your existing `background.png` as a style reference):**
+> 16-bit SNES pixel art, bright painterly early-90s console-sports look matching the attached image.
+> Soviet-1980 stadium: bold blue sky, tiered colourful crowd, concrete brutalist stands, tall
+> floodlight pylons, rows of small red pennants with gold-star motifs, red running track, an
+> onion-dome/tower city skyline silhouette on the horizon. Limited ~64–128 colour palette, crisp
+> dithering, clean chunky pixels. No text, no logos, no Olympic rings, no real mascots. Side-on view;
+> athlete sprites are ~96 px tall on a 960×540 screen (a figure ≈ a fifth of screen height). Keep the
+> bottom ~150 px a simple flat lane/apron band. Fill the frame, no border.
 
-> [GLOBAL STYLE] A wide establishing shot inside a packed 1980s athletics stadium at midday. Bright
-> blue sky with a few fluffy clouds, two tall floodlight pylons left and right, tiers of colourful
-> crowd, rows of small plain pennants around the stand rail, a red running track across the lower
-> third, a stylised city skyline silhouette on the horizon. Empty centre space suitable for a game
-> logo. 384×216, 16:9, SNES pixel art.
+**MUSIC (Suno style):**
+> **8-bit NES chiptune**, authentic 2A03 sound — square-wave leads, a second square for harmony,
+> triangle-wave bass, noise-channel percussion. Catchy Russian-folk melody (*Korobeiniki/Kalinka*,
+> Soviet-march feel), minor key, tight looping. Instrumental, no vocals unless noted. Mono-friendly.
 
-## 2. Sprint & Hurdles stadium backdrop  →  `assets/stadium/track.png`  (768×216, tileable left↔right)
+---
 
-> [GLOBAL STYLE] A **side-on** view of an athletics stadium stand for a horizontally-scrolling race.
-> Upper two-thirds only: bright sky, a long continuous tier of colourful seated crowd, a concrete
-> stand structure, floodlight pylons at intervals, a rail of small coloured pennants. The bottom
-> ~30% must be a **flat empty band** (the game draws the red track and lanes there) — leave it a
-> simple dark apron colour. Must **tile seamlessly on the left and right edges** so it can repeat
-> across a long track. 768×216, SNES pixel art, no track markings, no runners.
+## 1 · Menu / Title — `assets/menu/background.png` (960×540) + `assets/music/menu.ogg`
 
-## 3. Long Jump venue  →  `assets/stadium/long_jump.png`  (768×216, tileable)
+**Image:** [BLOCK] A grand establishing shot inside a packed Soviet stadium at midday: floodlight
+pylons left and right, tiers of colourful crowd, red pennants, red track across the lower third, an
+onion-dome skyline on the horizon, open centre space for a game logo. **960×540.**
 
-> [GLOBAL STYLE] Side-on stadium stand backdrop for a long-jump runway, same style and framing as a
-> scrolling track backdrop: sky, tiered colourful crowd, floodlights, pennant rail. Bottom ~30% a
-> flat empty apron band (the game draws the runway, take-off board and sand pit). Seamlessly tileable
-> horizontally. 768×216, SNES pixel art, no foreground objects.
+**Suno:** [BLOCK] A proud, catchy NES title-theme march — bright square-lead melody over a marching
+triangle bass and noise snare, mid-tempo ~120 BPM, anthemic and inviting, loops cleanly.
 
-## 4. Hammer Throw infield  →  `assets/stadium/hammer.png`  (384×216)
+## 2 · Sprint & Hurdles — `assets/stadium/track.png` (1920×540, tileable) + `assets/music/track.ogg`
 
-> [GLOBAL STYLE] A single-screen view looking across a grass infield throwing sector inside a 1980s
-> stadium. Green field with faint marked sector lines fanning outward, a safety cage frame suggestion
-> at the left, tiered colourful crowd and floodlights behind, blue sky. Composition centred/left so a
-> thrower and a wide throwing sector fit. 384×216, SNES pixel art, no athlete, no text.
+**Image:** [BLOCK] Long side-on stadium stand for a scrolling race: sky, one continuous tier of
+colourful crowd, concrete stands, floodlight pylons, red-pennant rail; bottom ~150 px a flat dark
+apron (the game draws the red track + lanes + sprites). **Exactly 1920×540, seamlessly tileable left↔right.**
 
-## 5. Vault arena  →  `assets/stadium/vault.png`  (384×216)
+**Suno:** [BLOCK] Fast, frantic NES chase theme — rapid arpeggiated square lead, *Korobeiniki* gallop,
+busy noise-channel percussion, accelerating ~165 BPM. Breathless and competitive.
 
-> [GLOBAL STYLE] An indoor-ish gymnastics/vault arena at night inside the games complex: a spotlit
-> vault runway and horse/table apparatus area, darker moody stands with a colourful seated crowd lit
-> by spotlights, banners hanging. Cool blues and purples with warm spotlight pools — a dramatic
-> rhythm-game stage. 384×216, SNES pixel art, no athlete, no text, no UI.
+## 3 · Long Jump — `assets/stadium/long_jump.png` (1920×540, tileable) + `assets/music/long_jump.ogg`
 
-## 6. Podium ceremony backdrop  →  `assets/stadium/podium.png`  (384×216)
+**Image:** [BLOCK] Side-on stadium backdrop for a long-jump runway, same style/framing as the track:
+sky, tiered crowd, floodlights, red-pennant rail, bottom ~150 px flat apron (game draws runway, board
+and sand pit). **Exactly 1920×540, seamlessly tileable.**
 
-> [GLOBAL STYLE] A medal-ceremony stage at dusk: three empty podium blocks are NOT included (the game
-> draws them); instead a grand backdrop of tiered crowd, sweeping spotlights, hanging plain coloured
-> banners and a glowing sky. Celebratory, warm, confetti-friendly negative space in the centre.
-> 384×216, SNES pixel art, no podium, no athletes, no text.
+**Suno:** [BLOCK] Build-and-release NES theme — staccato square ostinato that ramps then lands on a
+big triangle-bass downbeat, ~135 BPM. Tension of the run-up and the leap.
 
-## 7. (Optional) Crowd tile  →  `assets/stadium/crowd_tile.png`  (64×48, tileable all edges)
+## 4 · Hammer Throw — `assets/stadium/hammer.png` (960×540) + `assets/music/hammer.ogg`
 
-> [GLOBAL STYLE] A small seamlessly-tiling texture of a packed stadium crowd seen from a distance:
-> tiny colourful seated spectators in rows on concrete tiers. Tiles seamlessly on all four edges.
-> 64×48, SNES pixel art, no faces detail, no text.
+**Image:** [BLOCK] Single-screen view across a grass infield throwing sector: green field lower half
+with faint sector lines fanning right, a suggested safety-cage frame at left, tiered crowd +
+floodlights + blue sky behind, red banners. Keep centre-left clear for a large thrower. **960×540.**
+
+**Suno:** [BLOCK] Heavy, spinning NES waltz in a minor key that accelerates like a whirling dance —
+chunky square chords, driving triangle bass, ~3/4 building to a release hit, ~130 BPM.
+
+## 5 · 100m Swim — `assets/stadium/swim.png` (1920×540, tileable) + `assets/music/swim.ogg`
+
+**Image:** [BLOCK] Long **side-on** aquatics-hall backdrop for a scrolling pool race: bright hall,
+tiered colourful crowd, floodlights/banners; bottom ~150 px a flat band (the game draws the blue pool
+water, lane ropes and side-on swimmers). **Exactly 1920×540, seamlessly tileable left↔right.**
+
+**Suno:** [BLOCK] Flowing but propulsive NES loop with a buoyant, splashy feel — bubbly arpeggiated
+square lead over a steady march bass, bright and energetic, ~150 BPM.
+
+## 6 · Podium ceremony — `assets/stadium/podium.png` (960×540) + `assets/music/podium.ogg`
+
+**Image:** [BLOCK] A medal-ceremony backdrop at dusk: tiered crowd, sweeping spotlights, hanging red
+banners with gold-star motifs, a glowing sky; leave the lower-centre open (game draws podium blocks +
+athletes) with room for confetti. **960×540.**
+
+**Suno:** [BLOCK] Triumphant NES victory anthem — soaring square-lead fanfare, full triangle-bass
+march, celebratory noise rolls, slow-to-mid tempo ~100 BPM. Grand and emotional (a short chiptune
+"anthem" that could loop).
 
 ---
 
 ## Integration notes
 
-- **Dimensions matter for TV/Pi:** the game renders into a **384×216** base canvas upscaled ×5 to
-  1080p, so single-screen art should be **384×216** and scrolling backdrops **768×216** (2 screens
-  wide, tileable). Anything larger is wasted memory on the console — downscale before importing.
-- Save as **PNG**; keep files small (a few dozen KB each at these sizes).
-- Scrolling backdrops (track / long jump) **must tile horizontally** — the stadium repeats them
-  across the world width.
-- Leave the **bottom ~30% empty** on side-scrolling track/runway art; the game overlays the red track
-  and lane lines there for gameplay clarity.
-- After adding a file at its path above, just run the game — the matching screen/event picks it up
-  automatically (procedural art is the fallback).
+- **Dimensions:** single-screen art = **960×540**; side-on scrolling backdrops (track / long_jump /
+  swim) = **1920×540** and must **tile horizontally**. The game renders at 960×540 (×2 to 1080p), so
+  don't exceed these — larger is wasted on the console.
+- Backgrounds = **PNG**; music = **`.ogg`** (small, loops cleanly; `.mp3`/`.wav` also work).
+- Leave the bottom **~150 px** of side-on backdrops flat — the game overlays the track/pool, lanes and
+  the ~96 px sprites there for gameplay clarity.
+- Music with the same key plays seamlessly across screens that share it (all menu screens = `menu`).

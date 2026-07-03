@@ -2,7 +2,7 @@ extends BaseScreen
 ## Animated title screen. Dusk stadium with twinkling stands, bunting, a sweeping spotlight and a
 ## bobbing wordmark. Press A to begin (country select). Fully driven by the console's controls.
 
-const COUNTRY_SELECT := "res://src/menus/CountrySelect.tscn"
+const COUNTRY_SELECT := "res://src/menus/ModeSelect.tscn"
 ## Drop a title image here later and it replaces the procedural backdrop automatically (text/prompt
 ## stay on top). No code change needed — just add the file. Recommended 384x216 (or any 16:9).
 const TITLE_IMAGE := "res://assets/menu/title.png"
@@ -23,15 +23,15 @@ func _screen_ready() -> void:
 	seed_rng.seed = 1980
 	for i in 90:
 		_lights.append({
-			"pos": Vector2(seed_rng.randf_range(6, Palette.BASE_WIDTH - 6), seed_rng.randf_range(150, 196)),
+			"pos": Vector2(seed_rng.randf_range(15, Palette.BASE_WIDTH - 15), seed_rng.randf_range(375, 490)),
 			"phase": seed_rng.randf_range(0, TAU),
-			"size": seed_rng.randi_range(1, 2),
+			"size": seed_rng.randi_range(3, 5),
 		})
 
-	_title = _band("PODIUM '80", 40, Palette.HIGHLIGHT, 48, 46)
-	_sub = _band("INTERNATIONAL SUMMER GAMES  ·  1980", 8, Palette.PAPER, 96, 12)
-	_prompt = _band("PRESS  A  TO BEGIN", 10, Palette.HIGHLIGHT, 176, 14)
-	_band("A FICTIONAL SPORTING EVENT  ·  PLACEHOLDER BUILD", 6, Palette.PAPER, 198, 8)
+	_title = _band("PODIUM '80", 100, Palette.HIGHLIGHT, 120, 115)
+	_sub = _band("INTERNATIONAL SUMMER GAMES  ·  1980", 20, Palette.PAPER, 240, 30)
+	_prompt = _band("PRESS  A  TO BEGIN", 25, Palette.HIGHLIGHT, 440, 35)
+	_band("A FICTIONAL SPORTING EVENT  ·  PLACEHOLDER BUILD", 15, Palette.PAPER, 495, 20)
 
 	AudioBus.loop_crowd(true, -24.0)
 
@@ -46,7 +46,7 @@ func _band(text: String, size: int, color: Color, y: float, h: float) -> Label:
 func _process(delta: float) -> void:
 	_t += delta
 	# Title bob.
-	_title.position.y = 52 + sin(_t * 2.0) * 2.0
+	_title.position.y = 120 + sin(_t * 2.0) * 5.0
 	_prompt.modulate.a = 0.6 + 0.4 * (0.5 + 0.5 * sin(_t * 4.0))
 	queue_redraw()
 
@@ -65,7 +65,7 @@ func _paint_bg() -> void:
 	if menu_bg():
 		draw_texture_rect(menu_bg(), Rect2(0, 0, w, h), false)
 		# Bottom scrim so the prompt/footer read clearly over the artwork.
-		var scrim_top := 164.0
+		var scrim_top := 410.0
 		var bands := 10
 		for i in bands:
 			var f := float(i) / bands

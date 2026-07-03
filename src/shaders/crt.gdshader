@@ -7,7 +7,7 @@ shader_type canvas_item;
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear, repeat_disable;
 
 uniform float curvature : hint_range(0.0, 0.5) = 0.10;      // barrel distortion amount
-uniform float scanline_strength : hint_range(0.0, 1.0) = 0.28;
+uniform float scanline_strength : hint_range(0.0, 1.0) = 0.15;
 uniform float scanline_count = 216.0;                        // one dark line per base pixel row
 uniform float aberration : hint_range(0.0, 4.0) = 0.7;      // colour bleed in screen pixels
 uniform float vignette_strength : hint_range(0.0, 2.0) = 0.55;

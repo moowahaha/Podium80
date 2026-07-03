@@ -3,10 +3,10 @@ extends Node
 ## Data-driven: extend a country's list or add a country and names flow through automatically.
 
 const NAMES := {
-	&"USSR": ["VOLKOV", "SOKOLOV", "IVANOV", "PETROV", "KUZNETSOV", "ORLOV", "MOROZOV", "ROMANOV"],
-	&"GDR": ["MULLER", "SCHMIDT", "WERNER", "FISCHER", "BRANDT", "KELLER", "HOFFMAN", "RICHTER"],
-	&"GBR": ["SMITH", "HARPER", "CLARKE", "BENNETT", "WELLS", "PRESTON", "HAYES", "MORLEY"],
-	&"FRA": ["DUBOIS", "MOREAU", "LEROY", "GIRARD", "MARTIN", "LAURENT", "MERCIER", "ROUX"],
+	&"USSR": ["YURI YAKFUR"],
+	&"GDR": ["PETER PROLL"],
+	&"GBR": ["CLIVE CRUMPET"],
+	&"AUS": ["BRUCE BONZA"],
 }
 
 const FALLBACK := ["ATHLETE", "RUNNER", "JUMPER", "THROWER"]

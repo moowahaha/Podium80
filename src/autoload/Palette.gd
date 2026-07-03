@@ -5,10 +5,13 @@ extends Node
 ## look can be retuned in one file. All gameplay/menus render into this base and are scaled up
 ## pixel-perfect by the canvas_items stretch (see project.godot / MeboboxOS override.cfg).
 
-# --- Base resolution (16:9, x5 = 1920x1080 exactly => pixel-perfect on the console) ---
-const BASE_WIDTH: int = 384
-const BASE_HEIGHT: int = 216
+# --- Base resolution (16:9, x2 = 1920x1080 exactly => pixel-perfect on the console) ---
+const BASE_WIDTH: int = 960
+const BASE_HEIGHT: int = 540
 const BASE_SIZE := Vector2i(BASE_WIDTH, BASE_HEIGHT)
+
+# Placeholder athlete draw ≈ 26px tall; scale it so figures read ~64px, matching the final sprites.
+const ATHLETE_SCALE := 2.45
 
 # --- Core retro palette (NES/SNES-ish, warm 1980s stadium) ---
 const INK := Color("14131f")          # near-black UI ink
