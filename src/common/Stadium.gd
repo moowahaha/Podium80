@@ -118,12 +118,14 @@ func _draw_track(w: float) -> void:
 		_draw_pool(w)
 		return
 	# Track apron + track.
+	var top := STANDS_BOTTOM + 15.0
 	draw_rect(Rect2(0, STANDS_BOTTOM, w, 15.0), Palette.INFIELD.darkened(0.2))
-	draw_rect(Rect2(0, STANDS_BOTTOM + 15.0, w, TRACK_BOTTOM - STANDS_BOTTOM - 15.0), Palette.TRACK)
-	# Lane lines.
-	draw_rect(Rect2(0, STANDS_BOTTOM + 15.0, w, 2.5), Palette.TRACK_LINE)
-	draw_rect(Rect2(0, ground_y + 15.0, w, 2.5), Palette.TRACK_LINE)
-	draw_rect(Rect2(0, TRACK_BOTTOM - 2.5, w, 2.5), Palette.TRACK_LINE)
+	draw_rect(Rect2(0, top, w, TRACK_BOTTOM - top), Palette.TRACK)
+	# Lane lines (evenly spaced across the running lanes).
+	var lanes := 6
+	for i in lanes + 1:
+		var y := lerpf(top, TRACK_BOTTOM, float(i) / lanes)
+		draw_rect(Rect2(0, y - 1.25, w, 2.5), Palette.TRACK_LINE)
 	# Distance tick marks for a sense of speed.
 	if track_markings:
 		var m := 0.0
