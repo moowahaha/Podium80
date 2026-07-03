@@ -9,14 +9,17 @@ class_name Athlete
 
 enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE, SWIM, HURDLE }
 
-# Per-country sprite sheets by state (expand as art arrives). Frames laid out left-to-right,
-# top-to-bottom in a cols×rows grid. States without a sheet fall back to the procedural drawing.
-const SPRITE_MAP := {
+# Per-country sprite sheets by state (expand as art arrives). Files live at
+# `assets/sprites/<country>/<file>.png`; frames are laid out left-to-right, top-to-bottom in a
+# cols×rows grid. `foot` = empty px below the figure's feet in the frame (keeps it on its shadow).
+# States without a sheet fall back to the procedural drawing.
+const SPRITE_DIR := "res://assets/sprites/"
+const SPRITE_STATES := {
 	&"USSR": {
-		State.IDLE: {"path": "res://assets/sprites/ussr-standing.png", "cols": 1, "rows": 1, "frames": 1},
-		State.RUN: {"path": "res://assets/sprites/ussr-running.png", "cols": 3, "rows": 3, "frames": 9},
-		State.READY: {"path": "res://assets/sprites/ussr-start-crouch.png", "cols": 1, "rows": 1, "frames": 1},
-		State.HURDLE: {"path": "res://assets/sprites/ussr-hurdle.png", "cols": 1, "rows": 1, "frames": 1},
+		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 3},
+		State.RUN:    {"file": "running",  "cols": 3, "rows": 3, "frames": 9, "foot": 3},
+		State.READY:  {"file": "crouch",   "cols": 1, "rows": 1, "frames": 1, "foot": 7},
+		State.HURDLE: {"file": "hurdle",   "cols": 1, "rows": 1, "frames": 1, "foot": 4},
 	},
 }
 
@@ -59,13 +62,16 @@ func _apply_scale() -> void:
 
 func _load_sheets() -> void:
 	_sheets = {}
-	var m: Dictionary = SPRITE_MAP.get(country_id, {})
+	var m: Dictionary = SPRITE_STATES.get(country_id, {})
+	var cdir := SPRITE_DIR + String(country_id).to_lower() + "/"
 	for st in m:
 		var info: Dictionary = m[st]
-		if ResourceLoader.exists(info["path"]):
-			var tex: Texture2D = load(info["path"])
+		var path := cdir + String(info["file"]) + ".png"
+		if ResourceLoader.exists(path):
+			var tex: Texture2D = load(path)
 			_sheets[st] = {
 				"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
+				"foot": info.get("foot", 0),
 				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
 			}
 
@@ -119,7 +125,8 @@ func _draw_sheet(sh: Dictionary) -> void:
 	var col := idx % int(sh["cols"])
 	var row := idx / int(sh["cols"])
 	var src := Rect2(col * fw, row * fh, fw, fh)
-	var dest := Rect2(-dw / 2.0, -dh, dw, dh)     # feet at origin, centred
+	var foot: float = float(sh.get("foot", 0)) * SPRITE_FIT   # drop the frame so the feet sit on the shadow
+	var dest := Rect2(-dw / 2.0, -dh + foot, dw, dh)     # feet at origin, centred
 	if facing < 0:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1, 1))
 		draw_texture_rect_region(sh["tex"], dest, src)

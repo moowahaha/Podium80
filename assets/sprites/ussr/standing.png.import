@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dhr37q0eeiuqg"
-path="res://.godot/imported/ussr-start-crouch.png-a3cc8eb4ab357413f9a10a82ea885203.ctex"
+uid="uid://bw744ltrk5vff"
+path="res://.godot/imported/standing.png-e5b2e0dfd60417979dbf030ade7eabfe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/ussr-start-crouch.png"
-dest_files=["res://.godot/imported/ussr-start-crouch.png-a3cc8eb4ab357413f9a10a82ea885203.ctex"]
+source_file="res://assets/sprites/ussr/standing.png"
+dest_files=["res://.godot/imported/standing.png-e5b2e0dfd60417979dbf030ade7eabfe.ctex"]
 
 [params]
 
