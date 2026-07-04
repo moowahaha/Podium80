@@ -15,6 +15,7 @@ const ATTEMPTS := 3
 const PHASE_DUR := 0.70
 const PHASE_NAME := ["HOP", "STEP", "JUMP"]
 const PIT_OFFSET_M := 12.0       # sand starts this far past the board — hop + step land on the runway
+const LEAP_PLANT := 13.0         # foot bias that drops the leap pose so its feet reach the ground
 
 var stadium: Stadium
 var cam: CameraManager
@@ -91,6 +92,7 @@ func _begin_attempt() -> void:
 	ath.set_country(cur_id)
 	ath.position = Vector2(RUNUP_X, stadium.ground_y)
 	ath.set_state(Athlete.State.IDLE)
+	ath.foot_bias = 0.0
 	state = St.APPROACH
 	_update_info()
 	set_prompt("ALTERNATE  A / B  TO RUN     LB  TO TAKE OFF AT THE BOARD")
@@ -135,6 +137,7 @@ func _start_phase(idx: int) -> void:
 	pressed = false
 	state = St.PHASE
 	ath.set_state(Athlete.State.HURDLE)      # leap into the phase
+	ath.foot_bias = LEAP_PLANT
 	AudioBus.play(&"jump", -2.0, 1.0 + idx * 0.1)
 	if idx < 2:
 		set_prompt("LB  —  %s !" % PHASE_NAME[idx + 1])
@@ -149,11 +152,16 @@ func _phase_step(delta: float) -> void:
 	ath.position.x += momentum * PX_PER_M * delta
 	var height := 30.0 + momentum * 6.0
 	ath.position.y = stadium.ground_y - sin(minf(p, 1.0) * PI) * height
-	# Sprite: leap then fly.
-	if p < 0.28:
+	# Hop and step just leap (hurdle pose); only the final jump into the sand leaps then spins.
+	if cur_phase < 2:
 		ath.set_state(Athlete.State.HURDLE)
+		ath.foot_bias = LEAP_PLANT
+	elif p < 0.28:
+		ath.set_state(Athlete.State.HURDLE)
+		ath.foot_bias = LEAP_PLANT
 	else:
 		ath.set_state(Athlete.State.JUMP)
+		ath.foot_bias = 0.0
 		ath.anim01 = clampf((p - 0.28) / 0.72, 0.0, 1.0)
 
 	if cur_phase < 2:
@@ -185,6 +193,7 @@ func _phase_step(delta: float) -> void:
 
 func _foul(reason: String) -> void:
 	AudioBus.play(&"foul")
+	ath.foot_bias = 0.0
 	ath.set_state(Athlete.State.STUMBLE)
 	banner("FOUL — %s" % reason, Palette.BAD, 1.4)
 	_record(0.0, true)

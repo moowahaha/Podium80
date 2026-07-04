@@ -30,10 +30,11 @@ const SPRITE_STATES := {
 		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 6},
 		State.HURDLE: {"file": "leaping",  "cols": 1, "rows": 1, "frames": 1, "foot": 3},
 		State.JUMP:   {"file": "longjump", "cols": 4, "rows": 1, "frames": 4, "foot": 2},   # tumble/spin
-		# fallen lies flat: its body sits at rows 25-39, so it needs a big foot drop to rest on the sand.
-		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25},
-		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25},
-		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25},
+		# fallen lies flat with an outstretched arm (compact body), so scale it up (fit) to match the
+		# other poses; foot=25 rests its lowest pixel on the ground regardless of scale.
+		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7},
+		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7},
+		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7},
 	},
 }
 
@@ -55,6 +56,7 @@ const RUN_STRIDE_PX := 9.0
 # Leg-cycle frames/sec when running on the spot (menus): no ground travel to key off, so run on time.
 const RUN_IN_PLACE_FPS := 11.0
 var run_in_place := false                     # menu: advance the run cycle on time, not distance
+var foot_bias := 0.0                          # extra source-px added to the sprite foot (plant a leap pose)
 var _sheets: Dictionary = {}                  # State -> {tex, cols, rows, frames, fw, fh}
 
 const H := 26.0                               # nominal procedural height in px
@@ -96,6 +98,7 @@ func _load_sheets() -> void:
 			_sheets[st] = {
 				"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
 				"foot": info.get("foot", 0),
+				"fit": info.get("fit", SPRITE_FIT),   # per-state scale override (e.g. enlarge a compact pose)
 				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
 			}
 
@@ -151,8 +154,9 @@ const SPRITE_FIT := 1.25
 func _draw_sheet(sh: Dictionary) -> void:
 	var fw: float = sh["fw"]
 	var fh: float = sh["fh"]
-	var dw: float = fw * SPRITE_FIT
-	var dh: float = fh * SPRITE_FIT
+	var fit: float = sh.get("fit", SPRITE_FIT)
+	var dw: float = fw * fit
+	var dh: float = fh * fit
 	# Shadow sized to the sprite footprint.
 	draw_ellipse_approx(Vector2(0, -1.0), dw * 0.24, dw * 0.07, Palette.SHADOW)
 	var frames := int(sh["frames"])
@@ -164,7 +168,7 @@ func _draw_sheet(sh: Dictionary) -> void:
 	var col := idx % int(sh["cols"])
 	var row := idx / int(sh["cols"])
 	var src := Rect2(col * fw, row * fh, fw, fh)
-	var foot: float = float(sh.get("foot", 0)) * SPRITE_FIT   # drop the frame so the feet sit on the shadow
+	var foot: float = (float(sh.get("foot", 0)) + foot_bias) * fit   # drop the frame so the feet sit on the shadow
 	var dest := Rect2(-dw / 2.0, -dh + foot, dw, dh)     # feet at origin, centred
 	if facing < 0:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1, 1))
