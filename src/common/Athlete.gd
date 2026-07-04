@@ -42,6 +42,7 @@ const SPRITE_STATES := {
 		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 6, "stride": 6.0},   # last frame dropped (pauses); faster cadence
 		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 6},
 		State.JUMP:   {"file": "longjump", "cols": 3, "rows": 3, "frames": 7, "foot": 6},    # real 7-frame flight
+		State.HURDLE: {"file": "hurdle",   "cols": 1, "rows": 1, "frames": 1, "foot": -3},   # floats to clear (plant bias grounds it in triple jump)
 		State.LAND:   {"file": "landed",   "cols": 1, "rows": 1, "frames": 1, "foot": 6},    # stuck-the-landing pose
 		# fallen (lying) is for spills — drop it to the ground and shift the feet to the mark.
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},

@@ -301,7 +301,9 @@ func _finish_race() -> void:
 	finish(human_values, ai_values)
 
 func _draw() -> void:
-	draw_line(Vector2(START_X, 375), Vector2(START_X, 520), Palette.TRACK_LINE, 2.5)
+	# Start line just ahead of the runners' feet (centred on START_X) so they line up behind it.
+	var start_line_x := START_X + 18.0
+	draw_line(Vector2(start_line_x, 375), Vector2(start_line_x, 520), Palette.TRACK_LINE, 2.5)
 	# Hurdles (back lanes first so nearer lanes overlap them), 3D-ish, with falls.
 	for lane in range(LANE_Y.size() - 1, -1, -1):
 		for hi in HURDLE_M.size():

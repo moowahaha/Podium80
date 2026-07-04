@@ -252,8 +252,10 @@ func _finish_race() -> void:
 	finish(human_values, ai_values)
 
 func _draw() -> void:
-	# Start + finish lines (world space).
-	draw_line(Vector2(START_X, 375), Vector2(START_X, 520), Palette.TRACK_LINE, 2.5)
+	# Start + finish lines (world space). The start line sits just ahead of the runners' feet (which
+	# are centred on START_X) so they line up behind it rather than straddling it.
+	var start_line_x := START_X + 18.0
+	draw_line(Vector2(start_line_x, 375), Vector2(start_line_x, 520), Palette.TRACK_LINE, 2.5)
 	# Checkered finish.
 	var y := 375.0
 	var on := true
