@@ -25,14 +25,15 @@ const SPRITE_STATES := {
 		State.LAND:   {"file": "land",     "cols": 1, "rows": 1, "frames": 1, "foot": 12},
 	},
 	&"AUS": {
-		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 3},
-		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 13, "foot": 3},
-		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
+		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 4},
+		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 13, "foot": 4},
+		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 6},
 		State.HURDLE: {"file": "leaping",  "cols": 1, "rows": 1, "frames": 1, "foot": 3},
 		State.JUMP:   {"file": "longjump", "cols": 4, "rows": 1, "frames": 4, "foot": 2},   # tumble/spin
-		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 6},
-		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 6},
-		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 6},
+		# fallen lies flat: its body sits at rows 25-39, so it needs a big foot drop to rest on the sand.
+		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25},
+		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25},
+		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25},
 	},
 }
 
