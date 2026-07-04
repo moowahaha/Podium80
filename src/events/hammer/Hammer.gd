@@ -21,7 +21,8 @@ const GAUGE_C := Vector2(118.0, 430.0)       # release gauge (screen space)
 const GAUGE_R := 46.0
 const CAM_WINDUP_POS := Vector2(300.0, 286.0)
 const CAM_WINDUP_ZOOM := 1.7
-const HOLD_FIT := 1.25                        # hold-sprite draw scale
+const HOLD_FIT := 0.95                        # hold-sprite draw scale (kept small enough to spin inside the cage)
+const FEET_FRAC := 0.86                       # the thrower's feet sit ~86% down the 64px sprite; spin pivots here
 const GRIP := 22.0                            # chain anchor (hands) distance from the circle centre
 const CHAIN := 44.0                           # hammer-head distance while spinning
 
@@ -232,12 +233,14 @@ func _draw() -> void:
 		draw_circle(land_pos, 6.0, Palette.BAD)
 		draw_arc(land_pos, 9.0, 0, TAU, 16, Palette.INK, 1.5)
 
-	# Thrower: top-down hold sprite, rotated to face the (release) spin direction.
+	# Thrower: top-down hold sprite, rotated to face the (release) spin direction. Anchored on the
+	# FEET (bottom-centre of the art) so the spin pivots about the feet, planted at the circle centre —
+	# not about the sprite's centre (which made the whole figure orbit).
 	if _hold_tex:
 		var face := angle if state == St.WINDUP else release_angle
 		var sz := 64.0 * HOLD_FIT
 		draw_set_transform(CIRCLE, face - PI / 2.0, Vector2.ONE)
-		draw_texture_rect(_hold_tex, Rect2(-sz / 2.0, -sz / 2.0, sz, sz), false)
+		draw_texture_rect(_hold_tex, Rect2(-sz * 0.5, -sz * FEET_FRAC, sz, sz), false)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_hammer(from: Vector2, head: Vector2) -> void:
