@@ -74,23 +74,11 @@ floodlights + blue sky behind, red banners. Keep centre-left clear for a large t
 **Suno:** [BLOCK] Heavy, spinning NES waltz in a minor key that accelerates like a whirling dance —
 chunky square chords, driving triangle bass, ~3/4 building to a release hit, ~130 BPM.
 
-## 5 · 100m Swim — `assets/stadium/swim.png` (1250×540, a WHOLE pool — not tileable) + `assets/music/swim.ogg`
+## 5 · Triple Jump & 400m — reuse `assets/stadium/track.png` (no separate art)
 
-**Image:** [BLOCK] **Flat 16-bit SNES pixel-art** (NOT photoreal, NOT 3D — see STYLE block) **side-on**
-aquatics-hall backdrop showing **one complete 50 m competition pool end to end** — the swim is a fixed
-there-and-back (dive off the near wall, flip-turn at the far wall, finish back at the near wall), so the
-pool has TWO fixed ends and must **NOT** tile. Compose the whole pool in one frame: at the **far-left
-~10 %** the **start / finish end** — raised starting blocks / diving platforms on the pool deck above
-the near wall; at the **far-right ~10 %** the **turn end** — the far pool wall with a row of
-**backstroke flags strung across** above it. Between them the empty lane water, and behind: bright hall,
-tiered colourful crowd, floodlights, red banners. **Leave the water EMPTY — NO swimmers, NO people in
-the pool; the game draws all the swimmers itself.** Bottom ~150 px a flat blue band (the game overlays
-lane ropes, the two end walls and the swimmer sprites) — keep the deck / starting blocks just **above**
-that band at the left, and the turn wall at the right, so the code-drawn walls line up with the art.
-**Exactly 1250×540 (≈2.3∶1), a single fixed composition — do not make it seamless/tileable.**
-
-**Suno:** [BLOCK] Flowing but propulsive NES loop with a buoyant, splashy feel — bubbly arpeggiated
-square lead over a steady march bass, bright and energetic, ~150 BPM.
+The **Triple Jump** and the **400m** both run on the same runway/track as the sprint and long jump, so
+they reuse `track.png` and its music (`track.ogg` / `long_jump.ogg`) — no dedicated stadium image or
+track needed. (The 100m Swim was removed; the water/pool render wasn't working out.)
 
 ## 6 · Podium ceremony — `assets/stadium/podium.png` (960×540) + `assets/music/podium.ogg`
 
@@ -107,10 +95,8 @@ march, celebratory noise rolls, slow-to-mid tempo ~100 BPM. Grand and emotional 
 ## Integration notes
 
 - **Dimensions:** single-screen art = **960×540**; side-on **scrolling** backdrops (track / long_jump)
-  = **1920×540** and must **tile horizontally**. The **swim** pool is the exception: **1250×540, a whole
-  fixed pool, NOT tileable** — the race is a fixed-length there-and-back, so the pool has real start and
-  turn ends that must not repeat. The game renders at 960×540 (×2 to 1080p), so don't exceed these —
-  larger is wasted on the console.
+  = **1920×540** and must **tile horizontally**. The triple jump and 400m reuse `track.png`. The game
+  renders at 960×540 (×2 to 1080p), so don't exceed these — larger is wasted on the console.
 - Backgrounds = **PNG**; music = **`.ogg`** (small, loops cleanly; `.mp3`/`.wav` also work).
 - Leave the bottom **~150 px** of side-on backdrops flat — the game overlays the track/pool, lanes and
   the ~96 px sprites there for gameplay clarity.
