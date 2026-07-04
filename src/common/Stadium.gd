@@ -13,6 +13,10 @@ class_name Stadium
 @export var backdrop_tile := true       # true: repeat/mirror the art; false: one fixed wide image (pool)
 
 const INFIELD_H := 20.0        # depth of the grassy infield strip between the stand wall and track
+# Runway mode (jump events): a single run strip flanked by grass, instead of the full lane track.
+@export var runway := false
+const RUNWAY_UP := 32.0        # run strip extends this far above the athlete line...
+const RUNWAY_DOWN := 34.0      # ...and this far below
 
 var SKY_H := 115.0
 var STANDS_BOTTOM := 370.0
@@ -71,6 +75,9 @@ func _build_ground_texture() -> void:
 	_track_grain.clear()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1980
+	if runway:
+		_build_runway_texture(rng)
+		return
 	# Grass blades rooted at the bottom of the infield strip, growing up.
 	var strip_bottom := STANDS_BOTTOM + INFIELD_H
 	var gx := 0.0
@@ -101,6 +108,29 @@ func _build_ground_texture() -> void:
 			"h": rng.randf_range(1.0, 2.0),
 			"col": col2,
 		})
+
+## Runway mode: grass blades scattered across the whole field (except under the strip) + grain on the strip.
+func _build_runway_texture(rng: RandomNumberGenerator) -> void:
+	var field_top := STANDS_BOTTOM
+	var field_bot := float(Palette.BASE_HEIGHT)
+	var rtop := ground_y - RUNWAY_UP
+	var rbot := ground_y + RUNWAY_DOWN
+	var blades := int(world_width * 1.4)
+	for _i in blades:
+		var y := rng.randf_range(field_top + 1.0, field_bot - 2.0)
+		if y > rtop - 2.0 and y < rbot + 2.0:
+			continue                                   # hidden under the run strip
+		var lighter := rng.randf() < 0.6
+		var col := Palette.INFIELD.lightened(rng.randf_range(0.05, 0.30)) if lighter else Palette.INFIELD.darkened(rng.randf_range(0.08, 0.30))
+		col.a = rng.randf_range(0.35, 0.8)
+		var hh := rng.randf_range(2.5, 5.5)
+		_grass.append({"x": rng.randf_range(0.0, world_width), "y": y - hh, "w": rng.randf_range(1.0, 1.8), "h": hh, "col": col})
+	var count := int(world_width * 1.6)
+	for _i in count:
+		var lighten := rng.randf() < 0.35
+		var col2 := Palette.TRACK.lightened(rng.randf_range(0.08, 0.22)) if lighten else Palette.TRACK.darkened(rng.randf_range(0.14, 0.40))
+		col2.a = rng.randf_range(0.25, 0.55)
+		_track_grain.append({"x": rng.randf_range(0.0, world_width), "y": rng.randf_range(rtop + 2.0, rbot - 2.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.0), "col": col2})
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -173,6 +203,9 @@ func _draw_track(w: float) -> void:
 	if surface == "pool":
 		_draw_pool(w)
 		return
+	if runway:
+		_draw_runway(w)
+		return
 	# Grassy infield strip below the stand wall, with blade texture + a shaded seam onto the track.
 	var top := STANDS_BOTTOM + INFIELD_H
 	draw_rect(Rect2(0, STANDS_BOTTOM, w, INFIELD_H), Palette.INFIELD.darkened(0.12))
@@ -194,6 +227,24 @@ func _draw_track(w: float) -> void:
 		while m < w:
 			draw_rect(Rect2(m, TRACK_BOTTOM - 10.0, 2.5, 7.5), Palette.TRACK_LINE * Color(1, 1, 1, 0.5))
 			m += 50.0
+
+## A single run strip (the runway) down the middle of a grass field — for the jump events.
+func _draw_runway(w: float) -> void:
+	var rtop := ground_y - RUNWAY_UP
+	var rbot := ground_y + RUNWAY_DOWN
+	# Grass field across the whole ground.
+	draw_rect(Rect2(0, STANDS_BOTTOM, w, float(Palette.BASE_HEIGHT) - STANDS_BOTTOM), Palette.INFIELD.darkened(0.12))
+	for b in _grass:
+		draw_rect(Rect2(b["x"], b["y"], b["w"], b["h"]), b["col"])
+	# Shaded seams where the grass meets the strip.
+	draw_rect(Rect2(0, rtop - 1.5, w, 1.5), Palette.INFIELD.darkened(0.45))
+	draw_rect(Rect2(0, rbot, w, 1.5), Palette.INFIELD.darkened(0.45))
+	# The run strip (red track), dusted with grain, with white edge lines.
+	draw_rect(Rect2(0, rtop, w, rbot - rtop), Palette.TRACK)
+	for g in _track_grain:
+		draw_rect(Rect2(g["x"], g["y"], g["w"], g["h"]), g["col"])
+	draw_rect(Rect2(0, rtop - 1.25, w, 2.5), Palette.TRACK_LINE)
+	draw_rect(Rect2(0, rbot - 1.25, w, 2.5), Palette.TRACK_LINE)
 
 func _draw_pool(w: float) -> void:
 	# Poolside deck, then the water, drawn side-on like the running track band.

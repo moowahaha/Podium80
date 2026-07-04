@@ -36,6 +36,7 @@ var jump_h := 0.0
 var measured := 0.0
 var _info: Label
 var _sand_flecks: Array = []     # static grain specks over the sand pit (seeded)
+var _splash: SandSplash
 
 func _music_key() -> StringName:
 	return &"long_jump"
@@ -57,6 +58,7 @@ func _event_ready() -> void:
 	stadium = Stadium.new()
 	stadium.world_width = WORLD_W
 	stadium.track_markings = false
+	stadium.runway = true                                    # single run strip flanked by grass
 	stadium.set_backdrop("res://assets/stadium/track.png")   # shares the running-stadium backdrop
 	add_child(stadium)
 
@@ -71,6 +73,8 @@ func _event_ready() -> void:
 	cam.set_targets([ath])
 	cam.make_current()
 
+	_splash = SandSplash.new()
+	add_child(_splash)
 	_build_sand_texture()
 
 	_info = UI.label("", 20, Palette.PAPER)
@@ -151,6 +155,7 @@ func _flight(delta: float) -> void:
 		ath.position.y = stadium.ground_y
 		ath.set_state(Athlete.State.LAND)
 		AudioBus.play(&"land")
+		_splash.burst(Vector2(land_x, stadium.ground_y + 6.0), clampf(1.0 + measured * 0.12, 1.0, 2.2))
 		_record(measured, false)
 
 func _foul(reason: String) -> void:
@@ -191,8 +196,8 @@ func _build_sand_texture() -> void:
 	_sand_flecks.clear()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42
-	var y0 := stadium.ground_y - 4.0
-	var y1 := stadium.ground_y + 29.0
+	var y0 := stadium.ground_y - 8.0
+	var y1 := stadium.ground_y + 34.0
 	var base := Color("d9c48a")
 	var count := int((WORLD_W - BOARD_X) * 1.1)
 	for _i in count:
@@ -208,8 +213,8 @@ func _build_sand_texture() -> void:
 		})
 
 func _draw() -> void:
-	# Sand pit + take-off board over the track.
-	draw_rect(Rect2(BOARD_X, stadium.ground_y - 5.0, WORLD_W - BOARD_X, 35.0), Color("d9c48a"))
+	# Sand pit + take-off board over the runway.
+	draw_rect(Rect2(BOARD_X, stadium.ground_y - 9.0, WORLD_W - BOARD_X, 44.0), Color("d9c48a"))
 	for s in _sand_flecks:
 		draw_rect(Rect2(s["x"], s["y"], s["w"], s["h"]), s["col"])
 	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board

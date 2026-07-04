@@ -39,7 +39,7 @@ const SPRITE_STATES := {
 	},
 	&"GBR": {
 		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 6},
-		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 6},   # last frame dropped (pauses)
+		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 6, "stride": 6.0},   # last frame dropped (pauses); faster cadence
 		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 6},
 		State.JUMP:   {"file": "longjump", "cols": 3, "rows": 3, "frames": 7, "foot": 6},    # real 7-frame flight
 		State.LAND:   {"file": "landed",   "cols": 1, "rows": 1, "frames": 1, "foot": 6},    # stuck-the-landing pose
@@ -110,6 +110,7 @@ func _load_sheets() -> void:
 				"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
 				"foot": info.get("foot", 0),
 				"shift": info.get("shift", 0.0),       # source-px to nudge the frame forward (facing dir)
+				"stride": info.get("stride", RUN_STRIDE_PX),  # world-px per run frame (tune per sheet vs foot-slip)
 				"fit": info.get("fit", SPRITE_FIT),   # per-state scale override (e.g. enlarge a compact pose)
 				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
 			}
@@ -126,7 +127,8 @@ func _process(delta: float) -> void:
 			_phase += delta * RUN_IN_PLACE_FPS
 		elif absf(dx) < 200.0:               # ignore teleports (finish snap / reset)
 			# Distance-based: advance the leg cycle by how far we actually moved (no foot slip).
-			_phase += absf(dx) / RUN_STRIDE_PX
+			var stride: float = _sheets.get(State.RUN, {}).get("stride", RUN_STRIDE_PX)
+			_phase += absf(dx) / stride
 	elif state == State.SWIM:
 		_phase += delta * (6.0 + run_speed * 22.0)
 	if state == State.THROW:

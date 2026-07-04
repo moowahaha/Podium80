@@ -39,6 +39,7 @@ var takeoff_x := 0.0
 var pressed := false
 var _info: Label
 var _sand_flecks: Array = []     # static grain specks over the sand pit (seeded)
+var _splash: SandSplash
 
 func _music_key() -> StringName:
 	return &"long_jump"
@@ -60,6 +61,7 @@ func _event_ready() -> void:
 	stadium = Stadium.new()
 	stadium.world_width = WORLD_W
 	stadium.track_markings = false
+	stadium.runway = true                                    # single run strip flanked by grass
 	stadium.set_backdrop("res://assets/stadium/track.png")
 	add_child(stadium)
 
@@ -74,6 +76,8 @@ func _event_ready() -> void:
 	cam.set_targets([ath])
 	cam.make_current()
 
+	_splash = SandSplash.new()
+	add_child(_splash)
 	_build_sand_texture()
 
 	_info = UI.label("", 20, Palette.PAPER)
@@ -189,6 +193,7 @@ func _phase_step(delta: float) -> void:
 			ath.position.y = stadium.ground_y
 			ath.set_state(Athlete.State.LAND)
 			AudioBus.play(&"land")
+			_splash.burst(Vector2(ath.position.x, stadium.ground_y + 6.0), 1.7)
 			_record(maxf(0.0, (ath.position.x - BOARD_X) / PX_PER_M), false)
 
 func _foul(reason: String) -> void:
@@ -236,12 +241,12 @@ func _build_sand_texture() -> void:
 		var lighten := rng.randf() < 0.5
 		var col := base.lightened(rng.randf_range(0.08, 0.28)) if lighten else base.darkened(rng.randf_range(0.10, 0.34))
 		col.a = rng.randf_range(0.35, 0.7)
-		_sand_flecks.append({"x": rng.randf_range(pit_x, WORLD_W), "y": rng.randf_range(stadium.ground_y - 4.0, stadium.ground_y + 29.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.5), "col": col})
+		_sand_flecks.append({"x": rng.randf_range(pit_x, WORLD_W), "y": rng.randf_range(stadium.ground_y - 8.0, stadium.ground_y + 34.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.5), "col": col})
 
 func _draw() -> void:
 	# Take-off board + sand pit (pit is out where the final jump lands).
 	var pit_x := BOARD_X + PIT_OFFSET_M * PX_PER_M
-	draw_rect(Rect2(pit_x, stadium.ground_y - 5.0, WORLD_W - pit_x, 35.0), Color("d9c48a"))
+	draw_rect(Rect2(pit_x, stadium.ground_y - 9.0, WORLD_W - pit_x, 44.0), Color("d9c48a"))
 	for s in _sand_flecks:
 		draw_rect(Rect2(s["x"], s["y"], s["w"], s["h"]), s["col"])
 	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board
