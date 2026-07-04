@@ -322,11 +322,11 @@ func _draw() -> void:
 ## forward (rotates about the base) when clattered.
 func _draw_hurdle(hx: float, gy: float, s: float, fall: float) -> void:
 	var h := 34.0 * s          # board height
-	var w := 12.0 * s          # half base width
-	var bw := w * 1.45
+	var w := 8.0 * s           # half base width (slimmer)
+	var bw := w * 1.3
 	var by := -h - 6.5 * s
-	var bh := 7.0 * s
-	var dep := Vector2(7.0 * s, -3.5 * s)   # depth offset toward the back of the hurdle (into screen)
+	var bh := 6.0 * s
+	var dep := Vector2(2.5 * s, -1.5 * s)   # small depth offset — mostly side-on, easy to read
 	var metal := Color("cfd2da")
 	var metal_d := Color("9195a0")
 	var base := Palette.STAND_BASE.darkened(0.25)

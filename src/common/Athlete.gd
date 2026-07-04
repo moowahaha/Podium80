@@ -48,6 +48,16 @@ const SPRITE_STATES := {
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 	},
+	&"GDR": {
+		State.IDLE:   {"file": "stand",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
+		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 6, "stride": 6.0},   # last frame dropped (stutters)
+		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
+		State.JUMP:   {"file": "longjump", "cols": 3, "rows": 3, "frames": 7, "foot": 6},    # real 7-frame flight
+		State.HURDLE: {"file": "hurdle",   "cols": 1, "rows": 1, "frames": 1, "foot": 3},    # floats to clear; plant bias grounds it
+		State.LAND:   {"file": "land",     "cols": 1, "rows": 1, "frames": 1, "foot": 6, "fit": 0.9, "shift": 9.0},   # bulky flex — scale down, nudge to the landing mark
+		State.FALL:   {"file": "fall",     "cols": 1, "rows": 1, "frames": 1, "foot": 16},   # lying (spills)
+		State.STUMBLE:{"file": "fall",     "cols": 1, "rows": 1, "frames": 1, "foot": 16},
+	},
 }
 
 @export var country_id: StringName = &"USSR"

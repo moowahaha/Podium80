@@ -6,7 +6,7 @@ const NAMES := {
 	&"USSR": ["Павел Полоний"],
 	&"GDR": ["PETER PROLL"],
 	&"GBR": ["CLIVE CRUMPET"],
-	&"AUS": ["BRUCE BONZA"],
+	&"AUS": ["BRUCE BONZAROO"],
 }
 
 const FALLBACK := ["ATHLETE", "RUNNER", "JUMPER", "THROWER"]
