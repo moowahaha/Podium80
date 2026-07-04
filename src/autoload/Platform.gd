@@ -35,6 +35,9 @@ const JOY := {
 }
 
 func _enter_tree() -> void:
+	# React to input the instant it arrives instead of accumulating it to the render frame — noticeably
+	# snappier for the alternate-tap running (at a small CPU cost).
+	Input.use_accumulated_input = false
 	_build_input_map()
 
 func _build_input_map() -> void:
