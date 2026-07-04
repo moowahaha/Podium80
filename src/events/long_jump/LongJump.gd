@@ -9,7 +9,7 @@ enum St { APPROACH, FLIGHT, LANDED, BETWEEN, DONE }
 
 const PX_PER_M := 30.0
 const RUNUP_X := 60.0
-const BOARD_X := 590.0
+const BOARD_X := 700.0          # longer run-up: board sits further down the runway, sand starts here
 const WORLD_W := 1175.0
 const ATTEMPTS := 3
 
@@ -35,6 +35,7 @@ var land_x := 0.0
 var jump_h := 0.0
 var measured := 0.0
 var _info: Label
+var _sand_flecks: Array = []     # static grain specks over the sand pit (seeded)
 
 func _music_key() -> StringName:
 	return &"long_jump"
@@ -69,6 +70,8 @@ func _event_ready() -> void:
 	cam.max_zoom = 1.2
 	cam.set_targets([ath])
 	cam.make_current()
+
+	_build_sand_texture()
 
 	_info = UI.label("", 20, Palette.PAPER)
 	_info.position = Vector2(15, 70)
@@ -182,9 +185,33 @@ func _finish() -> void:
 		banner_persist("P1  %.2f m      P2  %.2f m" % [float(best[players[0]]), float(best[players[1]])], Palette.HIGHLIGHT)
 	finish(best.duplicate(), ai_values)
 
+## Pre-bake static grain for the sand so the pit reads as grippy sand, not a flat tan block. Seeded
+## for a stable, non-shimmering texture.
+func _build_sand_texture() -> void:
+	_sand_flecks.clear()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
+	var y0 := stadium.ground_y - 4.0
+	var y1 := stadium.ground_y + 29.0
+	var base := Color("d9c48a")
+	var count := int((WORLD_W - BOARD_X) / 3.0)
+	for _i in count:
+		var lighten := rng.randf() < 0.5
+		var col := base.lightened(rng.randf_range(0.05, 0.22)) if lighten else base.darkened(rng.randf_range(0.06, 0.22))
+		col.a = rng.randf_range(0.25, 0.6)
+		_sand_flecks.append({
+			"x": rng.randf_range(BOARD_X, WORLD_W),
+			"y": rng.randf_range(y0, y1),
+			"w": rng.randf_range(1.5, 3.0),
+			"h": rng.randf_range(1.0, 2.5),
+			"col": col,
+		})
+
 func _draw() -> void:
 	# Sand pit + take-off board over the track.
 	draw_rect(Rect2(BOARD_X, stadium.ground_y - 5.0, WORLD_W - BOARD_X, 35.0), Color("d9c48a"))
+	for s in _sand_flecks:
+		draw_rect(Rect2(s["x"], s["y"], s["w"], s["h"]), s["col"])
 	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board
 	# distance guide marks every metre from the board
 	for m in range(1, 12):

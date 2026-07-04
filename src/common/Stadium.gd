@@ -12,6 +12,8 @@ class_name Stadium
 @export var surface := "track"          # "track" (red running track) or "pool" (blue water lanes)
 @export var backdrop_tile := true       # true: repeat/mirror the art; false: one fixed wide image (pool)
 
+const INFIELD_H := 20.0        # depth of the grassy infield strip between the stand wall and track
+
 var SKY_H := 115.0
 var STANDS_BOTTOM := 370.0
 var TRACK_BOTTOM := 520.0
@@ -19,6 +21,8 @@ var ground_y := 490.0          # where athlete feet rest
 var backdrop: Texture2D        # optional generated stadium art (drop-in); tiled across the world
 var _t := 0.0
 var _crowd: Array = []         # [{x, y, base_col, phase, w, h}]
+var _grass: Array = []         # static grass blades over the infield strip (seeded)
+var _track_grain: Array = []   # static grain specks over the running track (seeded)
 
 func _ready() -> void:
 	z_index = -10          # always the backmost layer, so event decorations + athletes draw on top
@@ -26,6 +30,7 @@ func _ready() -> void:
 	STANDS_BOTTOM = Palette.BASE_HEIGHT * 0.685
 	TRACK_BOTTOM = Palette.BASE_HEIGHT * 0.963
 	_build_crowd()
+	_build_ground_texture()
 
 ## Use a generated backdrop image if one exists at `path` (SNES stadium art). See docs/ART_PROMPTS.md.
 ## When set, the art replaces the procedural sky/stands/crowd; the track + lane lines stay overlaid
@@ -58,6 +63,44 @@ func _build_crowd() -> void:
 				"h": 5.0,
 			})
 		x += step
+
+## Pre-bake static specks so the ground reads as grass + gritty track rather than flat fills. Seeded,
+## so the grain is stable frame-to-frame (no shimmer) and consistent across runs.
+func _build_ground_texture() -> void:
+	_grass.clear()
+	_track_grain.clear()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1980
+	# Grass blades rooted at the bottom of the infield strip, growing up.
+	var strip_bottom := STANDS_BOTTOM + INFIELD_H
+	var gx := 0.0
+	while gx < world_width:
+		var lighter := rng.randf() < 0.6
+		var col := Palette.INFIELD.lightened(rng.randf_range(0.05, 0.30)) if lighter else Palette.INFIELD.darkened(rng.randf_range(0.08, 0.30))
+		col.a = rng.randf_range(0.35, 0.8)
+		var h := rng.randf_range(2.5, 6.0)
+		_grass.append({
+			"x": gx + rng.randf_range(-1.0, 1.0),
+			"y": strip_bottom - h - rng.randf_range(0.0, 3.0),
+			"w": rng.randf_range(1.0, 1.8),
+			"h": h,
+			"col": col,
+		})
+		gx += rng.randf_range(2.0, 4.5)
+	# Fine grain flecks scattered across the track.
+	var top := STANDS_BOTTOM + INFIELD_H
+	var count := int(world_width / 5.0)
+	for _i in count:
+		var lighten := rng.randf() < 0.5
+		var col2 := Palette.TRACK.lightened(rng.randf_range(0.05, 0.18)) if lighten else Palette.TRACK.darkened(rng.randf_range(0.06, 0.20))
+		col2.a = rng.randf_range(0.12, 0.30)
+		_track_grain.append({
+			"x": rng.randf_range(0.0, world_width),
+			"y": rng.randf_range(top + 2.0, TRACK_BOTTOM - 2.0),
+			"w": rng.randf_range(1.5, 3.5),
+			"h": rng.randf_range(1.0, 2.2),
+			"col": col2,
+		})
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -130,10 +173,16 @@ func _draw_track(w: float) -> void:
 	if surface == "pool":
 		_draw_pool(w)
 		return
-	# Track apron + track.
-	var top := STANDS_BOTTOM + 15.0
-	draw_rect(Rect2(0, STANDS_BOTTOM, w, 15.0), Palette.INFIELD.darkened(0.2))
+	# Grassy infield strip below the stand wall, with blade texture + a shaded seam onto the track.
+	var top := STANDS_BOTTOM + INFIELD_H
+	draw_rect(Rect2(0, STANDS_BOTTOM, w, INFIELD_H), Palette.INFIELD.darkened(0.12))
+	for b in _grass:
+		draw_rect(Rect2(b["x"], b["y"], b["w"], b["h"]), b["col"])
+	draw_rect(Rect2(0, top - 1.5, w, 1.5), Palette.INFIELD.darkened(0.45))
+	# Track, dusted with grain so it doesn't read as a flat fill.
 	draw_rect(Rect2(0, top, w, TRACK_BOTTOM - top), Palette.TRACK)
+	for g in _track_grain:
+		draw_rect(Rect2(g["x"], g["y"], g["w"], g["h"]), g["col"])
 	# Lane lines (evenly spaced across the running lanes).
 	var lanes := 6
 	for i in lanes + 1:
