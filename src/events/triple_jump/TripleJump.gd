@@ -14,6 +14,7 @@ const WORLD_W := 1080.0
 const ATTEMPTS := 3
 const PHASE_DUR := 0.70
 const PHASE_NAME := ["HOP", "STEP", "JUMP"]
+const PIT_OFFSET_M := 12.0       # sand starts this far past the board — hop + step land on the runway
 
 var stadium: Stadium
 var cam: CameraManager
@@ -36,6 +37,7 @@ var phase_t := 0.0
 var takeoff_x := 0.0
 var pressed := false
 var _info: Label
+var _sand_flecks: Array = []     # static grain specks over the sand pit (seeded)
 
 func _music_key() -> StringName:
 	return &"long_jump"
@@ -70,6 +72,8 @@ func _event_ready() -> void:
 	cam.max_zoom = 1.2
 	cam.set_targets([ath])
 	cam.make_current()
+
+	_build_sand_texture()
 
 	_info = UI.label("", 20, Palette.PAPER)
 	_info.position = Vector2(15, 70)
@@ -211,10 +215,26 @@ func _finish() -> void:
 		banner_persist("P1  %.2f m      P2  %.2f m" % [float(best[players[0]]), float(best[players[1]])], Palette.HIGHLIGHT)
 	finish(best.duplicate(), ai_values)
 
+## Pre-bake static grain so the pit reads as grippy sand, not a flat tan block (seeded, stable).
+func _build_sand_texture() -> void:
+	_sand_flecks.clear()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
+	var pit_x := BOARD_X + PIT_OFFSET_M * PX_PER_M
+	var base := Color("d9c48a")
+	var count := int((WORLD_W - pit_x) * 1.1)
+	for _i in count:
+		var lighten := rng.randf() < 0.5
+		var col := base.lightened(rng.randf_range(0.08, 0.28)) if lighten else base.darkened(rng.randf_range(0.10, 0.34))
+		col.a = rng.randf_range(0.35, 0.7)
+		_sand_flecks.append({"x": rng.randf_range(pit_x, WORLD_W), "y": rng.randf_range(stadium.ground_y - 4.0, stadium.ground_y + 29.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.5), "col": col})
+
 func _draw() -> void:
 	# Take-off board + sand pit (pit is out where the final jump lands).
-	var pit_x := BOARD_X + 10.0 * PX_PER_M
+	var pit_x := BOARD_X + PIT_OFFSET_M * PX_PER_M
 	draw_rect(Rect2(pit_x, stadium.ground_y - 5.0, WORLD_W - pit_x, 35.0), Color("d9c48a"))
+	for s in _sand_flecks:
+		draw_rect(Rect2(s["x"], s["y"], s["w"], s["h"]), s["col"])
 	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board
 	for m in range(1, 20):
 		var mx := BOARD_X + m * PX_PER_M
