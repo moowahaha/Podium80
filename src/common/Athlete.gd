@@ -31,10 +31,21 @@ const SPRITE_STATES := {
 		State.HURDLE: {"file": "leaping",  "cols": 1, "rows": 1, "frames": 1, "foot": 3},
 		State.JUMP:   {"file": "longjump", "cols": 4, "rows": 1, "frames": 4, "foot": 2},   # tumble/spin
 		# fallen lies flat with an outstretched arm (compact body), so scale it up (fit) to match the
-		# other poses; foot=25 rests its lowest pixel on the ground regardless of scale.
-		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7},
-		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7},
-		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7},
+		# other poses; foot=25 rests its lowest pixel on the ground; shift moves the feet to the landing
+		# mark (the pose is otherwise centred, leaving the legs behind where the athlete lands).
+		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
+		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
+		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
+	},
+	&"GBR": {
+		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 5},
+		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 5},   # last frame dropped (pauses)
+		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
+		State.JUMP:   {"file": "longjump", "cols": 3, "rows": 3, "frames": 7, "foot": 3},    # real 7-frame flight
+		# fallen fills the frame (full size); just drop it to the ground and shift the feet to the mark.
+		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
+		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
+		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 	},
 }
 
@@ -98,6 +109,7 @@ func _load_sheets() -> void:
 			_sheets[st] = {
 				"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
 				"foot": info.get("foot", 0),
+				"shift": info.get("shift", 0.0),       # source-px to nudge the frame forward (facing dir)
 				"fit": info.get("fit", SPRITE_FIT),   # per-state scale override (e.g. enlarge a compact pose)
 				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
 			}
@@ -169,7 +181,8 @@ func _draw_sheet(sh: Dictionary) -> void:
 	var row := idx / int(sh["cols"])
 	var src := Rect2(col * fw, row * fh, fw, fh)
 	var foot: float = (float(sh.get("foot", 0)) + foot_bias) * fit   # drop the frame so the feet sit on the shadow
-	var dest := Rect2(-dw / 2.0, -dh + foot, dw, dh)     # feet at origin, centred
+	var shift: float = float(sh.get("shift", 0.0)) * fit   # nudge forward (mirrored below when facing left)
+	var dest := Rect2(-dw / 2.0 + shift, -dh + foot, dw, dh)   # feet at origin, centred (+shift forward)
 	if facing < 0:
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1, 1))
 		draw_texture_rect_region(sh["tex"], dest, src)
