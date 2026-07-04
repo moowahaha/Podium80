@@ -30,6 +30,23 @@ The console exposes only **D-pad + A + B + LB + RB** (START/SELECT are reserved 
 pause / hold-to-quit). The whole game is playable with those. Two players use two controllers
 (true per-pad input — see *MeboboxOS integration*).
 
+### Button → key mapping (must match the Creator Hub)
+
+The game binds these exact keys (`src/autoload/Platform.gd`) and ships them in `manifest.json`. When
+publishing to the Mebobox Creator Hub, set **both** maps — omitting `controlsP2` collapses both
+controllers onto Player 1, so the second pad does nothing.
+
+| Logical button | Player 1 (`controls`) | Player 2 (`controlsP2`) |
+|---|---|---|
+| Up | Arrow Up | `i` |
+| Down | Arrow Down | `k` |
+| Left | Arrow Left | `j` |
+| Right | Arrow Right | `l` |
+| A | Space | `f` |
+| B | `b` | `g` |
+| LB | `q` | `h` |
+| RB | `w` | `n` |
+
 ## Running & building
 
 Requires Godot 4.x (`godot` on PATH).
