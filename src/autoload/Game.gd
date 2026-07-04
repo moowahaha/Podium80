@@ -14,7 +14,7 @@ signal event_completed(event_id: StringName, ranked: Array)
 ## `ai` gives the opponent-simulation distribution for the nations no human is playing.
 const EVENTS: Array[Dictionary] = [
 	{
-		"id": &"sprint", "title": "100M SPRINT", "unit": "s", "higher_better": false,
+		"id": &"sprint", "title": "100M SPRINT", "unit": "s", "higher_better": false, "dist": 100.0,
 		"two_player": true, "scene": "res://src/events/sprint/Sprint.tscn",
 		"ai": {"mean": 11.2, "sd": 0.55, "min": 10.2, "max": 13.6},
 	},
@@ -34,9 +34,14 @@ const EVENTS: Array[Dictionary] = [
 		"ai": {"mean": 69.0, "sd": 6.5, "min": 38.0, "max": 84.0},
 	},
 	{
-		"id": &"swim", "title": "100M SWIM", "unit": "s", "higher_better": false,
-		"two_player": true, "scene": "res://src/events/swim/Swim.tscn",
-		"ai": {"mean": 17.5, "sd": 1.4, "min": 14.5, "max": 22.0},
+		"id": &"triple_jump", "title": "TRIPLE JUMP", "unit": "m", "higher_better": true,
+		"two_player": false, "scene": "res://src/events/triple_jump/TripleJump.tscn",
+		"ai": {"mean": 15.2, "sd": 1.3, "min": 10.5, "max": 18.2},
+	},
+	{
+		"id": &"sprint_400", "title": "400M", "unit": "s", "higher_better": false, "dist": 400.0,
+		"two_player": true, "scene": "res://src/events/sprint/Sprint.tscn",
+		"ai": {"mean": 46.0, "sd": 2.8, "min": 42.0, "max": 55.0},
 	},
 ]
 

@@ -8,13 +8,15 @@ extends EventBase
 enum St { INTRO, MARKS, SET, RUN, DONE }
 
 const PX_PER_M := 17.5
-const DIST_M := 100.0
 const START_X := 115.0
-const FINISH_X := START_X + DIST_M * PX_PER_M
-const WORLD_W := FINISH_X + 135.0
 const LANE_Y := [490.0, 470.0, 450.0, 430.0]
 const LANE_SCALE := [1.0, 0.94, 0.88, 0.82]
-const RACE_TIMEOUT := 22.0
+
+# Race distance is data-driven (100m sprint vs 400m) — set from the event config.
+var dist_m := 100.0
+var finish_x := 1865.0
+var world_w := 2000.0
+var race_timeout := 22.0
 
 var stadium: Stadium
 var cam: CameraManager
@@ -39,9 +41,13 @@ func _music_key() -> StringName:
 
 func _event_ready() -> void:
 	ai_values = Game.roll_ai_values()
+	dist_m = float(Game.current_event().get("dist", 100.0))
+	finish_x = START_X + dist_m * PX_PER_M
+	world_w = finish_x + 135.0
+	race_timeout = dist_m * 0.15 + 12.0
 
 	stadium = Stadium.new()
-	stadium.world_width = WORLD_W
+	stadium.world_width = world_w
 	stadium.ground_y = LANE_Y[0]
 	stadium.set_backdrop("res://assets/stadium/track.png")   # drop-in art; procedural fallback
 	add_child(stadium)
@@ -77,7 +83,7 @@ func _event_ready() -> void:
 
 	cam = CameraManager.new()
 	add_child(cam)
-	cam.setup(WORLD_W, 350.0)
+	cam.setup(world_w, 350.0)
 	cam.set_targets(runners.map(func(r): return r["node"]))
 	cam.make_current()
 
@@ -178,7 +184,7 @@ func _run_step(delta: float) -> void:
 			r["node"].run_speed = eng.speed_ratio()
 		else:
 			var x := clampf(elapsed / maxf(r["target"], 0.1), 0.0, 1.0)
-			r["dist"] = DIST_M * pow(x, 1.06)
+			r["dist"] = dist_m * pow(x, 1.06)
 			r["node"].run_speed = clampf(1.2 - x * 0.2, 0.4, 1.0)
 		# Standing pose only when genuinely stopped; while any speed remains the (distance-locked)
 		# run cycle carries the deceleration so the feet don't slide.
@@ -187,7 +193,7 @@ func _run_step(delta: float) -> void:
 		else:
 			r["node"].set_state(Athlete.State.RUN)
 		r["node"].position.x = START_X + r["dist"] * PX_PER_M
-		if r["dist"] >= DIST_M:
+		if r["dist"] >= dist_m:
 			r["done"] = true
 			r["time"] = elapsed if r["human"] else r["target"]
 			r["coast"] = maxf(r["node"].run_speed, 0.7)   # power through the line, don't celebrate
@@ -199,11 +205,11 @@ func _run_step(delta: float) -> void:
 	if tape_broken:
 		tape_t += delta
 
-	if elapsed > RACE_TIMEOUT:
+	if elapsed > race_timeout:
 		for r in runners:
 			if not r["done"]:
 				r["done"] = true
-				r["time"] = RACE_TIMEOUT
+				r["time"] = race_timeout
 				r["coast"] = 0.7
 
 	var all_done := true
@@ -252,7 +258,7 @@ func _draw() -> void:
 	var y := 375.0
 	var on := true
 	while y < 520.0:
-		draw_rect(Rect2(FINISH_X - 5.0, y, 10.0, 10.0), Palette.PAPER if on else Palette.INK)
+		draw_rect(Rect2(finish_x - 5.0, y, 10.0, 10.0), Palette.PAPER if on else Palette.INK)
 		on = not on
 		y += 10.0
 	_draw_tape()
@@ -262,7 +268,7 @@ func _draw_tape() -> void:
 	var top: float = LANE_Y[LANE_Y.size() - 1] - 40.0
 	var bot: float = LANE_Y[0] - 26.0
 	if not tape_broken:
-		draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X, bot), Palette.PAPER, 2.5)
+		draw_line(Vector2(finish_x, top), Vector2(finish_x, bot), Palette.PAPER, 2.5)
 		return
 	var p := clampf(tape_t / 0.5, 0.0, 1.0)
 	if p >= 1.0:
@@ -271,5 +277,5 @@ func _draw_tape() -> void:
 	var recoil := sin(p * PI) * 26.0
 	var a := 1.0 - p
 	var col := Color(Palette.PAPER.r, Palette.PAPER.g, Palette.PAPER.b, a)
-	draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X - recoil, lerpf(by, top, p)), col, 2.5)
-	draw_line(Vector2(FINISH_X, bot), Vector2(FINISH_X - recoil, lerpf(by, bot, p)), col, 2.5)
+	draw_line(Vector2(finish_x, top), Vector2(finish_x - recoil, lerpf(by, top, p)), col, 2.5)
+	draw_line(Vector2(finish_x, bot), Vector2(finish_x - recoil, lerpf(by, bot, p)), col, 2.5)
