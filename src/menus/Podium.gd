@@ -68,8 +68,6 @@ func _screen_ready() -> void:
 	add_child(prompt)
 
 	AudioBus.play(&"fanfare")
-	AudioBus.swell_crowd(-4.0)
-	AudioBus.loop_crowd(true, -12.0)
 
 func _process(delta: float) -> void:
 	_t += delta
