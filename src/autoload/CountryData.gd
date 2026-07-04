@@ -12,9 +12,9 @@ const ORDER: Array[StringName] = [&"USSR", &"GDR", &"GBR", &"AUS"]
 
 const COUNTRIES := {
 	&"USSR": {
-		"name": "USSR",
+		"name": "CCCP",
 		"long_name": "SOVIET UNION",
-		"abbrev": "URS",
+		"abbrev": "CCCP",
 		"accent": Color("e23b3b"),          # scoreboard / UI accent
 		"kit_primary": Color("cc2a2a"),     # jersey
 		"kit_secondary": Color("f4d84a"),   # trim / shorts

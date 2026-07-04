@@ -44,3 +44,30 @@ func center_label(text: String, size := 20, color := Palette.PAPER) -> Label:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	return l
+
+# --- Shared "PODIUM '80" wordmark (Russo One, red + blue) ---------------------
+const RUSSO := "res://assets/fonts/RussoOne-Regular.ttf"
+const LOGO_RED := Color("e2342f")
+const LOGO_BLUE := Color("2f6fe0")
+
+## Add the two-colour PODIUM '80 wordmark to `parent`, centred at font size `fsize`, top at `y`.
+## Returns the wordmark's pixel width. Use everywhere the logo appears so it stays identical.
+func add_podium_logo(parent: Node, y: float, fsize: int) -> float:
+	var russo: Font = load(RUSSO)
+	var w1: float = russo.get_string_size("PODIUM ", HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x
+	var w2: float = russo.get_string_size("'80", HORIZONTAL_ALIGNMENT_LEFT, -1, fsize).x
+	var sx := (Palette.BASE_WIDTH - (w1 + w2)) / 2.0
+	parent.add_child(_logo_part("PODIUM ", LOGO_RED, russo, fsize, sx, y))
+	parent.add_child(_logo_part("'80", LOGO_BLUE, russo, fsize, sx + w1, y))
+	return w1 + w2
+
+func _logo_part(text: String, color: Color, font: Font, fsize: int, x: float, y: float) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_override("font", font)
+	l.add_theme_font_size_override("font_size", fsize)
+	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_outline_color", Palette.INK)
+	l.add_theme_constant_override("outline_size", maxi(2, fsize / 10))
+	l.position = Vector2(x, y)
+	return l

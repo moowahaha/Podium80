@@ -28,17 +28,28 @@ func _screen_ready() -> void:
 			"size": seed_rng.randi_range(3, 5),
 		})
 
-	# Static two-colour wordmark in Russo One: "PODIUM" red, "'80" blue.
-	var russo: Font = load("res://assets/fonts/RussoOne-Regular.ttf")
+	# Shared two-colour PODIUM '80 wordmark.
 	var tsize := 118
-	var w1: float = russo.get_string_size("PODIUM ", HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
-	var w2: float = russo.get_string_size("'80", HORIZONTAL_ALIGNMENT_LEFT, -1, tsize).x
-	var sx := (Palette.BASE_WIDTH - (w1 + w2)) / 2.0
 	var ty := 40.0
-	_title_part("PODIUM ", Color("e2342f"), russo, tsize, sx, ty)
-	_title_part("'80", Color("2f6fe0"), russo, tsize, sx + w1, ty)
+	var total := UI.add_podium_logo(self, ty, tsize)
 
-	_sub = _band("INTERNATIONAL SUMMER GAMES  ·  1980", 20, Palette.PAPER, 250, 30)
+	# Russian tagline ("history simply repeats") in Ruslan Display, red, ~1/3 the title width.
+	var ruslan: Font = load("res://assets/fonts/RuslanDisplay.ttf")
+	var tag := "История просто повторяется"
+	var target_w := total / 3.0
+	var mw: float = ruslan.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 100).x
+	var tag_size := int(100.0 * target_w / maxf(mw, 1.0))
+	var sub := Label.new()
+	sub.text = tag
+	sub.add_theme_font_override("font", ruslan)
+	sub.add_theme_font_size_override("font_size", tag_size)
+	sub.add_theme_color_override("font_color", Color("e2342f"))
+	sub.add_theme_color_override("font_outline_color", Palette.INK)
+	sub.add_theme_constant_override("outline_size", 3)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.position = Vector2(0, ty + tsize * 1.05)
+	sub.size = Vector2(Palette.BASE_WIDTH, tag_size + 12)
+	add_child(sub)
 	_prompt = _band("PRESS  A  TO BEGIN", 25, Palette.HIGHLIGHT, 440, 35)
 	_band("A FICTIONAL SPORTING EVENT  ·  PLACEHOLDER BUILD", 15, Palette.PAPER, 495, 20)
 
@@ -51,18 +62,6 @@ func _band(text: String, size: int, color: Color, y: float, h: float) -> Label:
 	l.size = Vector2(Palette.BASE_WIDTH, h)
 	add_child(l)
 	return l
-
-## A static two-colour title part in Russo One (no movement, per design).
-func _title_part(text: String, color: Color, font: Font, fsize: int, x: float, y: float) -> void:
-	var l := Label.new()
-	l.text = text
-	l.add_theme_font_override("font", font)
-	l.add_theme_font_size_override("font_size", fsize)
-	l.add_theme_color_override("font_color", color)
-	l.add_theme_color_override("font_outline_color", Palette.INK)
-	l.add_theme_constant_override("outline_size", 12)
-	l.position = Vector2(x, y)
-	add_child(l)
 
 func _process(delta: float) -> void:
 	_t += delta
