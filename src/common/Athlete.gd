@@ -41,6 +41,9 @@ var _last_x := INF                            # tracks ground movement for dista
 # World px the athlete travels per run-cycle frame. Ties the legs to the ground so the feet don't
 # slip; lower = faster leg turnover for the same speed. Tune to the running sprite's stride.
 const RUN_STRIDE_PX := 9.0
+# Leg-cycle frames/sec when running on the spot (menus): no ground travel to key off, so run on time.
+const RUN_IN_PLACE_FPS := 11.0
+var run_in_place := false                     # menu: advance the run cycle on time, not distance
 var _sheets: Dictionary = {}                  # State -> {tex, cols, rows, frames, fw, fh}
 
 const H := 26.0                               # nominal procedural height in px
@@ -92,8 +95,11 @@ func _process(delta: float) -> void:
 	var dx := position.x - _last_x
 	_last_x = position.x
 	if state == State.RUN:
-		# Distance-based: advance the leg cycle by how far we actually moved (no foot slip).
-		if absf(dx) < 200.0:                 # ignore teleports (finish snap / reset)
+		if run_in_place:
+			# On-the-spot jog (menus): no travel to key off, so advance on time.
+			_phase += delta * RUN_IN_PLACE_FPS
+		elif absf(dx) < 200.0:               # ignore teleports (finish snap / reset)
+			# Distance-based: advance the leg cycle by how far we actually moved (no foot slip).
 			_phase += absf(dx) / RUN_STRIDE_PX
 	elif state == State.SWIM:
 		_phase += delta * (6.0 + run_speed * 22.0)

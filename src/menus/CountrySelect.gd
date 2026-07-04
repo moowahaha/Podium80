@@ -26,6 +26,7 @@ func _screen_ready() -> void:
 	for i in ids.size():
 		var cx := start_x + i * (CARD_W + GAP)
 		var flag := FlagRenderer.new()
+		flag.waving = false                   # static on the selection cards
 		flag.set_country(ids[i])
 		flag.position = Vector2(cx + (CARD_W - 115.0) / 2.0, 155)
 		flag.size = Vector2(115, 75)
@@ -42,6 +43,7 @@ func _screen_ready() -> void:
 
 		var ath := Athlete.new()
 		ath.set_country(ids[i])
+		ath.run_in_place = true               # jog on the spot when this nation is highlighted
 		ath.set_state(Athlete.State.IDLE)
 		ath.position = Vector2(cx + CARD_W / 2.0, 400)
 		add_child(ath)
@@ -58,7 +60,17 @@ func _title_labels() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_handle_input()
+	_update_athlete_states()
 	queue_redraw()
+
+## The athlete on each highlighted card jogs on the spot; the rest stand idle.
+func _update_athlete_states() -> void:
+	for i in _athletes.size():
+		var selected := false
+		for p in num_players:
+			if cursor[p] == i:
+				selected = true
+		_athletes[i].set_state(Athlete.State.RUN if selected else Athlete.State.IDLE)
 
 func _handle_input() -> void:
 	# Player 1
