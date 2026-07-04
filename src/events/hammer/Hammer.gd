@@ -22,7 +22,7 @@ const GAUGE_R := 46.0
 const CAM_WINDUP_POS := Vector2(300.0, 286.0)
 const CAM_WINDUP_ZOOM := 1.7
 const HOLD_FIT := 0.62                        # hold-sprite draw scale (small, so the hammer swings on a visible chain)
-const FEET_FRAC := 0.27                       # feet sit near the top of the sprite; pivot here (nudged toward centre)
+const FEET_FRAC := 0.34                       # pivot point in the sprite (nudged further toward the sprite centre)
 const GRIP := 26.0                            # chain anchor (hands) distance from the circle centre
 const CHAIN := 48.0                           # hammer-head distance while spinning (past the thrower → visible chain)
 
