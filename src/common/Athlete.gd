@@ -38,12 +38,12 @@ const SPRITE_STATES := {
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
 	},
 	&"GBR": {
-		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 5},
-		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 5},   # last frame dropped (pauses)
-		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
-		State.JUMP:   {"file": "longjump", "cols": 3, "rows": 3, "frames": 7, "foot": 3},    # real 7-frame flight
-		# fallen fills the frame (full size); just drop it to the ground and shift the feet to the mark.
-		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
+		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 6},
+		State.RUN:    {"file": "running",  "cols": 4, "rows": 4, "frames": 12, "foot": 6},   # last frame dropped (pauses)
+		State.READY:  {"file": "start",    "cols": 1, "rows": 1, "frames": 1, "foot": 6},
+		State.JUMP:   {"file": "longjump", "cols": 3, "rows": 3, "frames": 7, "foot": 6},    # real 7-frame flight
+		State.LAND:   {"file": "landed",   "cols": 1, "rows": 1, "frames": 1, "foot": 6},    # stuck-the-landing pose
+		# fallen (lying) is for spills — drop it to the ground and shift the feet to the mark.
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 	},
