@@ -11,6 +11,8 @@ extends Node
 ## Logical buttons (the only controls the console exposes): D-pad + A + B + LB + RB.
 ##   P1 keys: arrows, A=Space, B=B, LB=Q, RB=W          (matches manifest controls)
 ##   P2 keys: I/K/J/L,      A=F, B=G, LB=H, RB=N          (matches manifest controlsP2)
+## Two separate controllers: on the console the pad->key injector must map controller 2 through the
+## manifest `controlsP2` map (P2 keys below); off-console a 2nd physical pad binds via JOY device 1.
 ## START/SELECT are reserved by the OS (pause / hold-to-quit) and never used by gameplay.
 
 const BUTTONS: Array[StringName] = [&"up", &"down", &"left", &"right", &"a", &"b", &"lb", &"rb"]
