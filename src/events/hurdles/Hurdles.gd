@@ -323,6 +323,15 @@ func _draw_hurdle(hx: float, gy: float, s: float, fall: float) -> void:
 	var metal := Color("cfd2da")
 	var metal_d := Color("9195a0")
 	var base := Palette.STAND_BASE.darkened(0.25)
+	# Cast shadow on the track, projecting toward the approaching runner (a "jump now" cue). Flat on
+	# the ground (drawn before the tip transform); fades as the hurdle falls.
+	if fall < 1.0:
+		var slen := h * 0.9
+		var sy := gy + 2.0 * s
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(hx - w * 0.5, sy), Vector2(hx + w * 0.6, sy),
+			Vector2(hx + w * 0.6 - slen, sy + 4.0 * s), Vector2(hx - w * 0.5 - slen, sy + 4.0 * s),
+		]), Color(0, 0, 0, 0.24 * (1.0 - fall)))
 	draw_set_transform(Vector2(hx, gy), fall * PI / 2.0, Vector2.ONE)
 	# Weighted base feet (extend front + back) with a little thickness.
 	draw_rect(Rect2(-w * 1.25, -3.5 * s, w * 2.5, 3.5 * s), base)
