@@ -194,11 +194,11 @@ func _build_sand_texture() -> void:
 	var y0 := stadium.ground_y - 4.0
 	var y1 := stadium.ground_y + 29.0
 	var base := Color("d9c48a")
-	var count := int((WORLD_W - BOARD_X) / 3.0)
+	var count := int((WORLD_W - BOARD_X) * 1.1)
 	for _i in count:
 		var lighten := rng.randf() < 0.5
-		var col := base.lightened(rng.randf_range(0.05, 0.22)) if lighten else base.darkened(rng.randf_range(0.06, 0.22))
-		col.a = rng.randf_range(0.25, 0.6)
+		var col := base.lightened(rng.randf_range(0.08, 0.28)) if lighten else base.darkened(rng.randf_range(0.10, 0.34))
+		col.a = rng.randf_range(0.35, 0.7)
 		_sand_flecks.append({
 			"x": rng.randf_range(BOARD_X, WORLD_W),
 			"y": rng.randf_range(y0, y1),

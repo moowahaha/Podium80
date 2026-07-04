@@ -87,18 +87,18 @@ func _build_ground_texture() -> void:
 			"col": col,
 		})
 		gx += rng.randf_range(2.0, 4.5)
-	# Fine grain flecks scattered across the track.
+	# Dense grain flecks scattered across the track — gritty rubber-crumb look, biased dark.
 	var top := STANDS_BOTTOM + INFIELD_H
-	var count := int(world_width / 5.0)
+	var count := int(world_width * 1.6)
 	for _i in count:
-		var lighten := rng.randf() < 0.5
-		var col2 := Palette.TRACK.lightened(rng.randf_range(0.05, 0.18)) if lighten else Palette.TRACK.darkened(rng.randf_range(0.06, 0.20))
-		col2.a = rng.randf_range(0.12, 0.30)
+		var lighten := rng.randf() < 0.35
+		var col2 := Palette.TRACK.lightened(rng.randf_range(0.08, 0.22)) if lighten else Palette.TRACK.darkened(rng.randf_range(0.14, 0.40))
+		col2.a = rng.randf_range(0.25, 0.55)
 		_track_grain.append({
 			"x": rng.randf_range(0.0, world_width),
 			"y": rng.randf_range(top + 2.0, TRACK_BOTTOM - 2.0),
-			"w": rng.randf_range(1.5, 3.5),
-			"h": rng.randf_range(1.0, 2.2),
+			"w": rng.randf_range(1.5, 3.0),
+			"h": rng.randf_range(1.0, 2.0),
 			"col": col2,
 		})
 
