@@ -277,7 +277,8 @@ func _cross_hurdle(r: Dictionary) -> void:
 		if p >= 0.12 and p <= 0.70:
 			AudioBus.play(&"whoosh", -8.0)          # clean clear
 		else:
-			eng.speed *= 0.72                        # mistimed clip
+			eng.speed *= 0.72                        # mistimed clip — clips and topples the hurdle
+			hurdle_fall[r["next_h"] * 100 + r["lane"]] = 0.001
 			AudioBus.play(&"clang", -4.0)
 	else:
 		# grounded collision: heavy — knock this lane's hurdle over
@@ -320,6 +321,10 @@ func _draw() -> void:
 func _draw_hurdle(hx: float, gy: float, s: float, fall: float) -> void:
 	var h := 34.0 * s          # board height
 	var w := 12.0 * s          # half base width
+	var bw := w * 1.45
+	var by := -h - 6.5 * s
+	var bh := 7.0 * s
+	var dep := Vector2(7.0 * s, -3.5 * s)   # depth offset toward the back of the hurdle (into screen)
 	var metal := Color("cfd2da")
 	var metal_d := Color("9195a0")
 	var base := Palette.STAND_BASE.darkened(0.25)
@@ -333,18 +338,21 @@ func _draw_hurdle(hx: float, gy: float, s: float, fall: float) -> void:
 			Vector2(hx + w * 0.6 - slen, sy + 4.0 * s), Vector2(hx - w * 0.5 - slen, sy + 4.0 * s),
 		]), Color(0, 0, 0, 0.24 * (1.0 - fall)))
 	draw_set_transform(Vector2(hx, gy), fall * PI / 2.0, Vector2.ONE)
-	# Weighted base feet (extend front + back) with a little thickness.
+	# --- Back frame (offset into the screen, darker) ---
+	draw_rect(Rect2(-w * 1.1 + dep.x, -3.0 * s + dep.y, w * 2.2, 3.0 * s), base.darkened(0.25))
+	draw_rect(Rect2(-w * 0.55 + dep.x, -h + dep.y, 2.5 * s, h), metal_d.darkened(0.2))
+	draw_rect(Rect2(w * 0.35 + dep.x, -h + dep.y, 2.5 * s, h), metal_d.darkened(0.2))
+	# --- Top face of the rail (parallelogram receding to the back) ---
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(-bw, by), Vector2(bw, by), Vector2(bw + dep.x, by + dep.y), Vector2(-bw + dep.x, by + dep.y),
+	]), Palette.PAPER.lightened(0.12))
+	# --- Front frame ---
 	draw_rect(Rect2(-w * 1.25, -3.5 * s, w * 2.5, 3.5 * s), base)
 	draw_rect(Rect2(-w * 1.25, -3.5 * s, w * 2.5, 1.0 * s), base.lightened(0.2))
-	# Two uprights (back slightly darker for depth).
-	draw_rect(Rect2(-w * 0.55, -h, 2.5 * s, h), metal_d)
+	draw_rect(Rect2(-w * 0.55, -h, 2.5 * s, h), metal)
 	draw_rect(Rect2(w * 0.35, -h, 2.5 * s, h), metal)
-	var brace_y := -h * 0.45
-	draw_rect(Rect2(-w * 0.55, brace_y, w * 0.9, 1.5 * s), metal_d)   # cross-brace
-	# Top board: white with black stripes and a coloured leading edge.
-	var bw := w * 1.45
-	var by := -h - 6.5 * s
-	var bh := 7.0 * s
+	draw_rect(Rect2(-w * 0.55, -h * 0.45, w * 0.9, 1.5 * s), metal_d)   # cross-brace
+	# --- Top board front face: white with black stripes + coloured leading edge ---
 	draw_rect(Rect2(-bw, by, bw * 2.0, bh), Palette.PAPER)
 	var sx := -bw
 	var k := 0
@@ -353,7 +361,7 @@ func _draw_hurdle(hx: float, gy: float, s: float, fall: float) -> void:
 			draw_rect(Rect2(sx, by, 5.0 * s, bh), Palette.INK)
 		sx += 5.0 * s
 		k += 1
-	draw_rect(Rect2(-bw, by, bw * 2.0, 2.0 * s), Palette.ACCENT)      # coloured top edge
+	draw_rect(Rect2(-bw, by, bw * 2.0, 2.0 * s), Palette.ACCENT)
 	draw_rect(Rect2(-bw, by, bw * 2.0, bh), Palette.INK, false, 1.0 * s)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 

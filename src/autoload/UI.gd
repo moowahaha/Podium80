@@ -16,9 +16,9 @@ func _ready() -> void:
 	sb.set_corner_radius_all(0)
 	theme.set_stylebox("panel", "PanelContainer", sb)
 	theme.set_color("font_color", "Label", Palette.PAPER)
-	# Menus/UI use Oxanium.
-	if ResourceLoader.exists("res://assets/fonts/Oxanium.ttf"):
-		set_pixel_font(load("res://assets/fonts/Oxanium.ttf"))
+	# Menus/UI use Racing Sans One.
+	if ResourceLoader.exists("res://assets/fonts/RacingSansOne-Regular.ttf"):
+		set_pixel_font(load("res://assets/fonts/RacingSansOne-Regular.ttf"))
 
 ## Drop in a real pixel font later without touching any screen.
 func set_pixel_font(font: Font) -> void:

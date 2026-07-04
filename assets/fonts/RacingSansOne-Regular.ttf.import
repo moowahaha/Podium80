@@ -2,13 +2,13 @@
 
 importer="font_data_dynamic"
 type="FontFile"
-uid="uid://der38202gb1gg"
-path="res://.godot/imported/Oxanium.ttf-64b22b5d09ad4ae58af5aeff560442ee.fontdata"
+uid="uid://d1ierqaf2dhxd"
+path="res://.godot/imported/RacingSansOne-Regular.ttf-179983c92859c08deeaeba61df99c3df.fontdata"
 
 [deps]
 
-source_file="res://assets/fonts/Oxanium.ttf"
-dest_files=["res://.godot/imported/Oxanium.ttf-64b22b5d09ad4ae58af5aeff560442ee.fontdata"]
+source_file="res://assets/fonts/RacingSansOne-Regular.ttf"
+dest_files=["res://.godot/imported/RacingSansOne-Regular.ttf-179983c92859c08deeaeba61df99c3df.fontdata"]
 
 [params]
 
