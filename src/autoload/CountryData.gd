@@ -6,7 +6,8 @@ extends Node
 ## in the game hard-codes the set of four. Colours are chosen to read as four DISTINCT hues on a CRT
 ## (red / gold / white / blue) so competitors are easy to tell apart at a glance.
 ##
-## No protected marks: flags are simple procedural band+emblem placeholders drawn by FlagRenderer.
+## Flags are drawn from bitmap art in assets/flags/ by FlagRenderer; the per-country "flag" dict below
+## (bands/emblem) is retained as reference data only and no longer feeds the renderer.
 
 const ORDER: Array[StringName] = [&"USSR", &"GDR", &"GBR", &"AUS"]
 
