@@ -21,10 +21,10 @@ const GAUGE_C := Vector2(118.0, 430.0)       # release gauge (screen space)
 const GAUGE_R := 46.0
 const CAM_WINDUP_POS := Vector2(300.0, 286.0)
 const CAM_WINDUP_ZOOM := 1.7
-const HOLD_FIT := 0.95                        # hold-sprite draw scale (kept small enough to spin inside the cage)
-const FEET_FRAC := 0.18                       # the thrower's feet sit near the TOP of the 64px sprite; spin pivots here
-const GRIP := 22.0                            # chain anchor (hands) distance from the circle centre
-const CHAIN := 44.0                           # hammer-head distance while spinning
+const HOLD_FIT := 0.62                        # hold-sprite draw scale (small, so the hammer swings on a visible chain)
+const FEET_FRAC := 0.27                       # feet sit near the top of the sprite; pivot here (nudged toward centre)
+const GRIP := 26.0                            # chain anchor (hands) distance from the circle centre
+const CHAIN := 48.0                           # hammer-head distance while spinning (past the thrower → visible chain)
 
 var _field: Texture2D
 var _hold_tex: Texture2D
