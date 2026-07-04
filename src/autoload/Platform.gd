@@ -40,7 +40,9 @@ func _build_input_map() -> void:
 	_add_player_actions(1, P2_KEYS)
 	# Make standard Control focus navigation respond to the console's real keys/buttons too.
 	_ensure_event(&"ui_accept", _key(KEY_SPACE))
+	_ensure_event(&"ui_accept", _key_logical(KEY_SPACE))
 	_ensure_event(&"ui_cancel", _key(KEY_B))
+	_ensure_event(&"ui_cancel", _key_logical(KEY_B))
 
 func _add_player_actions(player: int, keys: Dictionary) -> void:
 	for btn in BUTTONS:
@@ -48,12 +50,19 @@ func _add_player_actions(player: int, keys: Dictionary) -> void:
 		if InputMap.has_action(action):
 			InputMap.erase_action(action)
 		InputMap.add_action(action, 0.5)
-		InputMap.action_add_event(action, _key(keys[btn]))
+		InputMap.action_add_event(action, _key(keys[btn]))          # physical (layout-independent, off-console)
+		InputMap.action_add_event(action, _key_logical(keys[btn]))  # logical keycode (the console's key injector)
 		InputMap.action_add_event(action, _joy(JOY[btn], player))
 
 func _key(keycode: Key) -> InputEventKey:
 	var e := InputEventKey.new()
 	e.physical_keycode = keycode
+	return e
+
+## Same key, matched by its logical keycode — this is what the console's pad->key injector emits.
+func _key_logical(keycode: Key) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.keycode = keycode
 	return e
 
 func _joy(button: JoyButton, device: int) -> InputEventJoypadButton:
