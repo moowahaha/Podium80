@@ -84,7 +84,7 @@ func _event_ready() -> void:
 	_info.position = Vector2(15, 70)
 	hud.add_child(_info)
 
-	AudioBus.loop_crowd(true, -22.0)
+	AudioBus.loop_crowd(true, -13.0)
 	_begin_attempt()
 
 func _begin_attempt() -> void:
@@ -241,12 +241,12 @@ func _build_sand_texture() -> void:
 		var lighten := rng.randf() < 0.5
 		var col := base.lightened(rng.randf_range(0.08, 0.28)) if lighten else base.darkened(rng.randf_range(0.10, 0.34))
 		col.a = rng.randf_range(0.35, 0.7)
-		_sand_flecks.append({"x": rng.randf_range(pit_x, WORLD_W), "y": rng.randf_range(stadium.ground_y - 8.0, stadium.ground_y + 34.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.5), "col": col})
+		_sand_flecks.append({"x": rng.randf_range(pit_x, WORLD_W), "y": rng.randf_range(stadium.ground_y - Stadium.RUNWAY_UP + 2.0, stadium.ground_y + Stadium.RUNWAY_DOWN - 2.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.5), "col": col})
 
 func _draw() -> void:
 	# Take-off board + sand pit (pit is out where the final jump lands).
 	var pit_x := BOARD_X + PIT_OFFSET_M * PX_PER_M
-	draw_rect(Rect2(pit_x, stadium.ground_y - 9.0, WORLD_W - pit_x, 44.0), Color("d9c48a"))
+	draw_rect(Rect2(pit_x, stadium.ground_y - Stadium.RUNWAY_UP, WORLD_W - pit_x, Stadium.RUNWAY_UP + Stadium.RUNWAY_DOWN), Color("d9c48a"))
 	for s in _sand_flecks:
 		draw_rect(Rect2(s["x"], s["y"], s["w"], s["h"]), s["col"])
 	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board

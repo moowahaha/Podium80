@@ -1,131 +1,145 @@
 extends BaseScreen
-## Final podium ceremony: top three nations on the blocks with flags, names and points; the champion
-## celebrates under falling confetti and a fanfare. A returns to the title.
+## Podium ceremony over the Red Square backdrop. Shown after the championship (overall standings) or
+## after a single event (that event's ranking). The top three nations stand on the gold/silver/bronze
+## blocks (positions detected from the colour-coded art) under a sky full of fireworks.
 
-const TITLE_SCENE := "res://src/menus/TitleScreen.tscn"
+const PLAYER_SELECT := "res://src/menus/PlayerSelect.tscn"
+const MODE_SELECT := "res://src/menus/ModeSelect.tscn"
+const BG := "res://assets/backgrounds/podium.png"
 
-# Screen slots per finishing place: 1st centre+tallest, 2nd left, 3rd right.
-const SLOTS := [
-	{"x": 480.0, "top": 300.0, "w": 110.0},   # 1st
-	{"x": 355.0, "top": 345.0, "w": 110.0},   # 2nd
-	{"x": 605.0, "top": 375.0, "w": 110.0},   # 3rd
-]
-const MEDAL := [Color("ffd23f"), Color("cfcfe0"), Color("cd7f32")]
+# Feet positions on each block's top surface (place 0/1/2 = gold/silver/bronze), read off the art.
+const SLOTS := [Vector2(453, 370), Vector2(305, 398), Vector2(602, 406)]
 
 func _music_key() -> StringName:
-	return &"podium"
+	return &"menu"
 
 var _t := 0.0
 var _busy := false
-var _confetti: Array = []
+var _bg: Texture2D
 var _rows: Array = []
+var _flagpoles: Array = []       # {flag, x, base, cap, lo, hi, delay}
+var _fw: Array = []              # firework particles {pos, vel, life, life0, col, size}
+var _fw_timer := 0.0
 
 func _screen_ready() -> void:
-	_rows = Game.standings_sorted()
+	bg_scrim = 0.0
+	if ResourceLoader.exists(BG):
+		_bg = load(BG)
 
-	var champ_id: StringName = _rows[0]["country"] if not _rows.is_empty() else CountryData.all_ids()[0]
-	var head := UI.center_label("CHAMPIONS OF THE 1980 GAMES", 28, Palette.HIGHLIGHT)
-	head.position = Vector2(0, 30)
-	head.size = Vector2(Palette.BASE_WIDTH, 30)
+	# Single event -> that event's ranking; championship -> overall standings.
+	_rows = Game.last_result() if Game.single_event_mode else Game.standings_sorted()
+
+	var title_txt := (String(Game.current_event()["title"]) + "  —  PODIUM") if Game.single_event_mode else "CHAMPIONS OF THE 1980 GAMES"
+	var head := UI.center_label(title_txt, 28, Palette.HIGHLIGHT)
+	head.position = Vector2(0, 24)
+	head.size = Vector2(Palette.BASE_WIDTH, 32)
 	add_child(head)
 
-	var winner := UI.center_label("%s  —  %s" % [CountryData.name_of(champ_id), Game.name_of(champ_id)], 22, CountryData.accent_of(champ_id))
-	winner.position = Vector2(0, 65)
-	winner.size = Vector2(Palette.BASE_WIDTH, 25)
-	add_child(winner)
-
 	for place in mini(3, _rows.size()):
-		var slot: Dictionary = SLOTS[place]
 		var id: StringName = _rows[place]["country"]
-
-		var flag := FlagRenderer.new()
-		flag.set_country(id)
-		flag.position = Vector2(slot["x"] - 37.5, slot["top"] - 100.0)
-		flag.size = Vector2(75, 50)
-		add_child(flag)
+		var foot: Vector2 = SLOTS[place]
 
 		var ath := Athlete.new()
 		ath.set_country(id)
-		ath.set_state(Athlete.State.CELEBRATE if place == 0 else Athlete.State.IDLE)
-		ath.position = Vector2(slot["x"], slot["top"])
+		ath.set_state(Athlete.State.CELEBRATE)     # dance sheet (ping-pong)
+		ath.set_depth(1.15)
+		ath.position = foot
+		ath.z_index = 5
+		ath._phase = place * 5.0                    # desync each place's dance
 		add_child(ath)
 
-		var nm := UI.center_label(CountryData.abbrev_of(id), 20, Palette.INK)
-		nm.position = Vector2(slot["x"] - slot["w"] / 2.0, slot["top"] + 20.0)
-		nm.size = Vector2(slot["w"], 22)
-		add_child(nm)
-
-		var pts := UI.center_label("%d PTS" % int(_rows[place]["points"]), 18, Palette.INK)
-		pts.position = Vector2(slot["x"] - slot["w"] / 2.0, slot["top"] + 45.0)
-		pts.size = Vector2(slot["w"], 20)
-		add_child(pts)
-
-	var prompt := UI.center_label("PRESS  A  TO RETURN TO TITLE", 20, Palette.PAPER)
-	prompt.position = Vector2(0, 485)
-	prompt.size = Vector2(Palette.BASE_WIDTH, 25)
-	add_child(prompt)
-
-	# Confetti.
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
-	var cols := [Palette.HIGHLIGHT, Palette.ACCENT, Palette.GOOD, Color("3b7be2"), Palette.PAPER]
-	for i in 80:
-		_confetti.append({
-			"pos": Vector2(rng.randf_range(0, Palette.BASE_WIDTH), rng.randf_range(-Palette.BASE_HEIGHT, 0)),
-			"vel": Vector2(rng.randf_range(-6, 6), rng.randf_range(20, 55)),
-			"col": cols[rng.randi_range(0, cols.size() - 1)],
-			"sw": rng.randf_range(0, TAU),
+		# A flag that raises up a pole behind the athlete (animated in _process).
+		var flag := FlagRenderer.new()
+		flag.waving = true
+		flag.set_country(id)
+		flag.size = Vector2(52, 33)
+		flag.z_index = 4
+		add_child(flag)
+		_flagpoles.append({
+			"flag": flag, "x": foot.x, "base": foot.y - 2.0, "cap": foot.y - 174.0,
+			"lo": foot.y - 36.0, "hi": foot.y - 170.0,
+			"delay": 0.35 + (2 - place) * 0.28,     # 3rd raises first, champion last
 		})
+
+	var prompt := UI.center_label("PRESS  A  TO CONTINUE", 20, Palette.PAPER)
+	prompt.position = Vector2(0, 500)
+	prompt.size = Vector2(Palette.BASE_WIDTH, 25)
+	prompt.z_index = 6
+	add_child(prompt)
 
 	AudioBus.play(&"fanfare")
 	AudioBus.swell_crowd(-4.0)
-	AudioBus.loop_crowd(true, -16.0)
+	AudioBus.loop_crowd(true, -12.0)
 
 func _process(delta: float) -> void:
 	_t += delta
-	for c in _confetti:
-		c["pos"] += c["vel"] * delta * 2.5
-		c["pos"].x += sin(_t * 3.0 + c["sw"]) * 20.0 * delta
-		if c["pos"].y > Palette.BASE_HEIGHT + 10.0:
-			c["pos"].y = -10.0
-			c["pos"].x = randf() * Palette.BASE_WIDTH
+	_update_fireworks(delta)
+	for fp in _flagpoles:
+		var tt := clampf((_t - float(fp["delay"])) / 1.3, 0.0, 1.0)
+		fp["flag"].position = Vector2(float(fp["x"]) + 2.0, lerpf(float(fp["lo"]), float(fp["hi"]), ease(tt, 0.4)))
 	queue_redraw()
 
 	if not _busy and Input.is_action_just_pressed(Platform.act(0, &"a")):
 		_busy = true
 		AudioBus.play(&"select")
-		Game.reset()
-		SceneRouter.goto_scene(TITLE_SCENE)
+		if Game.single_event_mode:
+			SceneRouter.goto_scene(MODE_SELECT)
+		else:
+			Game.reset()
+			SceneRouter.goto_scene(PLAYER_SELECT)
+
+# --- Fireworks ---------------------------------------------------------------
+
+const FW_COLS := [Color("ffe14d"), Color("ff5b5b"), Color("5bd0ff"), Color("b98bff"), Color("6cff8f"), Color("ffffff"), Color("ff9d3b")]
+
+func _update_fireworks(delta: float) -> void:
+	_fw_timer -= delta
+	if _fw_timer <= 0.0:
+		_burst()
+		_fw_timer = randf_range(0.12, 0.32)          # lots of them
+	var grav := 60.0
+	var alive: Array = []
+	for p in _fw:
+		p["life"] -= delta
+		if p["life"] <= 0.0:
+			continue
+		p["vel"].y += grav * delta
+		p["vel"] *= 0.985                             # air drag so sparks slow + hang
+		p["pos"] += p["vel"] * delta
+		alive.append(p)
+	_fw = alive
+
+func _burst() -> void:
+	var center := Vector2(randf_range(70, Palette.BASE_WIDTH - 70), randf_range(35, 250))
+	var col: Color = FW_COLS[randi() % FW_COLS.size()]
+	var count := randi_range(26, 44)
+	var power := randf_range(55.0, 150.0)
+	for i in count:
+		var ang := TAU * float(i) / count + randf_range(-0.1, 0.1)
+		var spd := power * randf_range(0.55, 1.0)
+		var life := randf_range(0.6, 1.35)
+		_fw.append({
+			"pos": center,
+			"vel": Vector2(cos(ang), sin(ang)) * spd,
+			"life": life, "life0": life,
+			"col": col if randf() < 0.8 else Palette.PAPER,
+			"size": randf_range(1.5, 3.5),
+		})
 
 func _paint_bg() -> void:
-	var w := float(Palette.BASE_WIDTH)
-	var h := float(Palette.BASE_HEIGHT)
-	# Night ceremony gradient.
-	var steps := 16
-	for i in steps:
-		var f := float(i) / steps
-		var col := Color("1a1740").lerp(Color("3a2a5a"), f)
-		draw_rect(Rect2(0, h * f, w, h / steps + 1.0), col)
-
-	# Spotlights.
-	for sx in [0.25, 0.5, 0.75]:
-		var origin := Vector2(w * sx, h)
-		var aim := Vector2(w * sx + sin(_t + sx * 6.0) * 75.0, 100.0)
-		var dir := (aim - origin).normalized()
-		var perp := Vector2(-dir.y, dir.x)
-		var far := origin + dir * (h * 1.1)
-		draw_colored_polygon(PackedVector2Array([origin, far + perp * 50.0, far - perp * 50.0]), Color(1, 0.95, 0.7, 0.05))
-
-	# Podium blocks.
-	for place in mini(3, _rows.size()):
-		var slot: Dictionary = SLOTS[place]
-		var top: float = slot["top"]
-		var bw: float = slot["w"]
-		var rect := Rect2(slot["x"] - bw / 2.0, top, bw, h - top)
-		draw_rect(rect, MEDAL[place].darkened(0.1))
-		draw_rect(rect, Palette.INK, false, 2.5)
-		draw_rect(Rect2(rect.position, Vector2(bw, 7.5)), MEDAL[place])
-
-	# Confetti.
-	for c in _confetti:
-		draw_rect(Rect2(c["pos"], Vector2(5, 7.5)), c["col"])
+	var r := Palette.base_rect()
+	if _bg:
+		draw_texture_rect(_bg, r, false)
+	else:
+		super._paint_bg()
+	# Flagpoles behind the athletes.
+	for fp in _flagpoles:
+		draw_line(Vector2(float(fp["x"]), float(fp["base"])), Vector2(float(fp["x"]), float(fp["cap"])), Palette.PANEL_LIGHT, 2.0)
+		draw_circle(Vector2(float(fp["x"]), float(fp["cap"])), 3.0, Color("f4d84a"))
+	# Fireworks over the sky (drawn under the athlete child nodes).
+	for p in _fw:
+		var a: float = clampf(p["life"] / p["life0"], 0.0, 1.0)
+		var c: Color = p["col"]
+		c.a = a
+		var s: float = p["size"] * (0.6 + 0.4 * a)
+		draw_rect(Rect2(p["pos"] - Vector2(s, s) * 0.5, Vector2(s, s)), c)

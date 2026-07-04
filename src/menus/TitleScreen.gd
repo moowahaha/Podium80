@@ -35,10 +35,10 @@ func _screen_ready() -> void:
 
 	# Russian tagline ("history simply repeats") in Ruslan Display, red, ~1/3 the title width.
 	var ruslan: Font = load("res://assets/fonts/RuslanDisplay.ttf")
-	var tag := "История просто повторяется"
-	var target_w := total / 3.0 * 1.3
+	var tag := Slogans.pick()
+	var target_w := total * 0.72
 	var mw: float = ruslan.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 100).x
-	var tag_size := int(100.0 * target_w / maxf(mw, 1.0))
+	var tag_size := clampi(int(100.0 * target_w / maxf(mw, 1.0)), 15, 30)
 	var sub := Label.new()
 	sub.text = tag
 	sub.add_theme_font_override("font", ruslan)
@@ -52,7 +52,7 @@ func _screen_ready() -> void:
 	add_child(sub)
 	_prompt = _band("PRESS  A  TO BEGIN", 25, Palette.HIGHLIGHT, 460, 35)
 
-	AudioBus.loop_crowd(true, -24.0)
+	AudioBus.loop_crowd(true, -19.0)
 
 ## A full-width, centre-aligned text band at a fixed y — reliable pixel-space layout.
 func _band(text: String, size: int, color: Color, y: float, h: float) -> Label:

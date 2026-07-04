@@ -2,7 +2,7 @@ extends BaseScreen
 ## Mode select: choose the number of players (◄ ► 1/2), then pick CHAMPIONSHIP (all events) or any
 ## single event to play on its own. A confirms, B returns to the title.
 
-const TITLE_SCENE := "res://src/menus/TitleScreen.tscn"
+const PLAYER_SELECT := "res://src/menus/PlayerSelect.tscn"
 const COUNTRY_SELECT := "res://src/menus/CountrySelect.tscn"
 
 var options: Array = []                # [{label, champ, index}]
@@ -10,7 +10,6 @@ var sel := 0
 var num_players := 1
 var _t := 0.0
 var _rows: Array[Label] = []
-var _players_lbl: Label
 
 func _screen_ready() -> void:
 	num_players = maxi(1, Game.pending_players)
@@ -21,11 +20,6 @@ func _screen_ready() -> void:
 
 	UI.add_podium_logo(self, 12, 58)
 
-	_players_lbl = UI.center_label("", 26, Palette.PAPER)
-	_players_lbl.position = Vector2(0, 108)
-	_players_lbl.size = Vector2(Palette.BASE_WIDTH, 30)
-	add_child(_players_lbl)
-
 	var y := 175.0
 	for i in options.size():
 		var lbl := UI.center_label(options[i]["label"], 26, Palette.PAPER)
@@ -35,14 +29,13 @@ func _screen_ready() -> void:
 		_rows.append(lbl)
 		y += 48.0
 
-	var prompt := UI.center_label("↑ ↓  SELECT      ◄ ►  PLAYERS      A  CONFIRM      B  BACK", 18, Palette.GOOD)
+	var prompt := UI.center_label("↑ ↓  SELECT      A  CONFIRM      B  BACK", 18, Palette.GOOD)
 	prompt.position = Vector2(0, 505)
 	prompt.size = Vector2(Palette.BASE_WIDTH, 22)
 	add_child(prompt)
 
 func _process(delta: float) -> void:
 	_t += delta
-	_players_lbl.text = "◄  %s  ►" % ("1 PLAYER" if num_players == 1 else "2 PLAYERS")
 	for i in _rows.size():
 		if i == sel:
 			_rows[i].add_theme_color_override("font_color", Palette.HIGHLIGHT)
@@ -59,14 +52,11 @@ func _handle_input() -> void:
 	if Input.is_action_just_pressed(Platform.act(0, &"down")):
 		sel = (sel + 1) % options.size()
 		AudioBus.play(&"move")
-	if Input.is_action_just_pressed(Platform.act(0, &"left")) or Input.is_action_just_pressed(Platform.act(0, &"right")):
-		num_players = 3 - num_players
-		AudioBus.play(&"move")
 	if Input.is_action_just_pressed(Platform.act(0, &"a")):
 		_confirm()
 	if Input.is_action_just_pressed(Platform.act(0, &"b")):
 		AudioBus.play(&"back")
-		SceneRouter.goto_scene(TITLE_SCENE)
+		SceneRouter.goto_scene(PLAYER_SELECT)
 
 func _confirm() -> void:
 	AudioBus.play(&"select")

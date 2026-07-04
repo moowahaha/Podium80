@@ -23,6 +23,7 @@ const SPRITE_STATES := {
 		State.STUMBLE:{"file": "hurdle-fall","cols": 1, "rows": 1, "frames": 1, "foot": 3},
 		State.JUMP:   {"file": "jump",     "cols": 3, "rows": 2, "frames": 5, "foot": 2},
 		State.LAND:   {"file": "land",     "cols": 1, "rows": 1, "frames": 1, "foot": 12},
+		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 17, "foot": 1, "pingpong": true},
 	},
 	&"AUS": {
 		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 4},
@@ -36,6 +37,7 @@ const SPRITE_STATES := {
 		State.LAND:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
+		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 16, "foot": 4, "pingpong": true},   # 16: last frame jitters on reverse
 	},
 	&"GBR": {
 		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 6},
@@ -47,6 +49,7 @@ const SPRITE_STATES := {
 		# fallen (lying) is for spills — drop it to the ground and shift the feet to the mark.
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
+		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 17, "foot": 5, "pingpong": true},
 	},
 	&"GDR": {
 		State.IDLE:   {"file": "stand",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
@@ -57,6 +60,7 @@ const SPRITE_STATES := {
 		State.LAND:   {"file": "land",     "cols": 1, "rows": 1, "frames": 1, "foot": 6, "fit": 0.9, "shift": 9.0},   # bulky flex — scale down, nudge to the landing mark
 		State.FALL:   {"file": "fall",     "cols": 1, "rows": 1, "frames": 1, "foot": 16},   # lying (spills)
 		State.STUMBLE:{"file": "fall",     "cols": 1, "rows": 1, "frames": 1, "foot": 16},
+		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 17, "foot": 4, "pingpong": true},
 	},
 }
 
@@ -77,6 +81,7 @@ var _last_x := INF                            # tracks ground movement for dista
 const RUN_STRIDE_PX := 9.0
 # Leg-cycle frames/sec when running on the spot (menus): no ground travel to key off, so run on time.
 const RUN_IN_PLACE_FPS := 11.0
+const DANCE_FPS := 9.0          # podium dance playback speed (ping-pong)
 var run_in_place := false                     # menu: advance the run cycle on time, not distance
 var foot_bias := 0.0                          # extra source-px added to the sprite foot (plant a leap pose)
 var _sheets: Dictionary = {}                  # State -> {tex, cols, rows, frames, fw, fh}
@@ -122,6 +127,7 @@ func _load_sheets() -> void:
 				"foot": info.get("foot", 0),
 				"shift": info.get("shift", 0.0),       # source-px to nudge the frame forward (facing dir)
 				"stride": info.get("stride", RUN_STRIDE_PX),  # world-px per run frame (tune per sheet vs foot-slip)
+				"pingpong": info.get("pingpong", false),  # play forward then backward (looping dance)
 				"fit": info.get("fit", SPRITE_FIT),   # per-state scale override (e.g. enlarge a compact pose)
 				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
 			}
@@ -142,6 +148,8 @@ func _process(delta: float) -> void:
 			_phase += absf(dx) / stride
 	elif state == State.SWIM:
 		_phase += delta * (6.0 + run_speed * 22.0)
+	elif state == State.CELEBRATE and _sheets.has(State.CELEBRATE):
+		_phase += delta * DANCE_FPS          # dance sheet advances on time (stationary on the podium)
 	if state == State.THROW:
 		_spin += delta * 10.0
 	queue_redraw()
@@ -188,6 +196,10 @@ func _draw_sheet(sh: Dictionary) -> void:
 	var idx := 0
 	if anim01 >= 0.0:
 		idx = clampi(int(anim01 * frames), 0, frames - 1)   # play once, driven by the event (e.g. jump arc)
+	elif sh.get("pingpong", false) and frames > 1:
+		var period := 2 * (frames - 1)                      # forward then backward (dance)
+		var tt := int(_phase) % period
+		idx = tt if tt < frames else period - tt
 	elif frames > 1:
 		idx = int(_phase) % frames                          # looping cycle (running)
 	var col := idx % int(sh["cols"])

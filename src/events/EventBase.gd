@@ -41,9 +41,10 @@ func _build_hud() -> void:
 	_title.position = Vector2(15, 10)
 	hud.add_child(_title)
 
-	_counter = UI.label("EVENT %d/%d" % [Game.current_event_index + 1, Game.event_count()], 18, Palette.PAPER)
-	_counter.position = Vector2(15, 40)
-	hud.add_child(_counter)
+	if not Game.single_event_mode:
+		_counter = UI.label("EVENT %d/%d" % [Game.current_event_index + 1, Game.event_count()], 18, Palette.PAPER)
+		_counter.position = Vector2(15, 40)
+		hud.add_child(_counter)
 
 	_banner = UI.center_label("", 40, Palette.PAPER)
 	_banner.position = Vector2(0, 195)

@@ -27,6 +27,7 @@ var state_t := 0.0
 var set_wait := 1.2
 var elapsed := 0.0
 var _clock: Label
+var _dist_lbl: Label
 var _false_count := 0
 var _post_started := false        # all runners crossed; now running off-screen before results
 var _post_t := 0.0
@@ -45,6 +46,11 @@ func _event_ready() -> void:
 	finish_x = START_X + dist_m * PX_PER_M
 	world_w = finish_x + 135.0
 	race_timeout = dist_m * 0.15 + 12.0
+
+	# The 400m plays too easy: give the AI faster target times (its shown + scored result both scale).
+	if dist_m >= 200.0:
+		for aid in ai_values:
+			ai_values[aid] = float(ai_values[aid]) * 0.93
 
 	stadium = Stadium.new()
 	stadium.world_width = world_w
@@ -73,10 +79,15 @@ func _event_ready() -> void:
 		ath.z_index = LANE_Y.size() - lane      # front lanes draw on top of back lanes
 		add_child(ath)
 		var human := Game.is_human(id)
+		var eng: RunEngine = null
+		if human:
+			eng = RunEngine.new()
+			if dist_m >= 200.0:
+				eng.max_speed *= 0.94        # slight player handicap in the long race
 		runners.append({
 			"id": id, "human": human, "pidx": Game.player_index_of(id),
 			"lane": lane, "node": ath,
-			"engine": (RunEngine.new() if human else null),
+			"engine": eng,
 			"target": float(ai_values.get(id, 12.0)),
 			"dist": 0.0, "done": false, "time": 0.0,
 		})
@@ -91,7 +102,11 @@ func _event_ready() -> void:
 	_clock.position = Vector2(Palette.BASE_WIDTH - 110, 10)
 	hud.add_child(_clock)
 
-	AudioBus.loop_crowd(true, -22.0)
+	_dist_lbl = UI.label("%dM TO GO" % int(dist_m), 20, Palette.HIGHLIGHT)
+	_dist_lbl.position = Vector2(Palette.BASE_WIDTH - 160, 42)
+	hud.add_child(_dist_lbl)
+
+	AudioBus.loop_crowd(true, -13.0)
 	queue_redraw()
 	_enter(St.MARKS)
 
@@ -100,19 +115,20 @@ func _enter(s: St) -> void:
 	state_t = 0.0
 	match s:
 		St.MARKS:
-			banner_persist("ON YOUR MARKS", Palette.PAPER)
+			banner_persist("На старт!", Palette.PAPER)
 			set_prompt("")
-		St.SET:
-			banner_persist("SET", Palette.HIGHLIGHT)
-			set_wait = randf_range(0.7, 1.8)
 			AudioBus.play(&"beep")
+		St.SET:
+			banner_persist("Внимание!", Palette.HIGHLIGHT)
+			set_wait = randf_range(0.7, 1.8)
+			AudioBus.play(&"beep", 0.0, 1.15)
 		St.RUN:
-			_banner_go()
+			banner("Марш!", Palette.GOOD, 0.9)
 			for r in runners:
 				if r["engine"] != null:
 					r["engine"].start()
 			set_prompt("ALTERNATE  A / B  TO RUN")
-			AudioBus.play(&"go")
+			AudioBus.play(&"pistol", 15.0)
 		St.DONE:
 			pass
 
@@ -121,6 +137,7 @@ func _banner_go() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	queue_redraw()                       # re-draw the tape/finish line every frame so they animate
 	match state:
 		St.MARKS:
 			state_t += delta
@@ -168,6 +185,10 @@ func _false_start() -> void:
 func _run_step(delta: float) -> void:
 	elapsed += delta
 	_clock.text = "%.2f" % elapsed
+	var lead := 0.0
+	for r in runners:
+		lead = maxf(lead, r["dist"])
+	_dist_lbl.text = "%dM TO GO" % maxi(0, int(ceil(dist_m - lead)))
 	for r in runners:
 		if r["done"]:
 			_coast(r, delta)                     # keep running through the line and off-screen
@@ -183,9 +204,10 @@ func _run_step(delta: float) -> void:
 			r["dist"] = eng.distance
 			r["node"].run_speed = eng.speed_ratio()
 		else:
+			# Human-like pacing: ease out of the blocks (low early) and build through the race.
 			var x := clampf(elapsed / maxf(r["target"], 0.1), 0.0, 1.0)
-			r["dist"] = dist_m * pow(x, 1.06)
-			r["node"].run_speed = clampf(1.2 - x * 0.2, 0.4, 1.0)
+			r["dist"] = dist_m * pow(x, 1.3)
+			r["node"].run_speed = clampf(0.4 + x * 0.6, 0.4, 1.0)
 		# Standing pose only when genuinely stopped; while any speed remains the (distance-locked)
 		# run cycle carries the deceleration so the feet don't slide.
 		if r["human"] and r["node"].run_speed <= 0.012:
@@ -221,17 +243,27 @@ func _run_step(delta: float) -> void:
 		_post_started = true
 		_post_t = 0.0
 		AudioBus.swell_crowd(-6.0)
-		var mine := ""
+		var win: Dictionary = runners[0]
 		for r in runners:
-			if r["human"]:
-				mine = "%s  %.2f s" % [CountryData.abbrev_of(r["id"]), r["time"]]
-				break
-		banner_persist("FINISH!  %s" % mine, Palette.HIGHLIGHT)
+			if float(r["time"]) < float(win["time"]):
+				win = r
+		banner_persist("%s   %.2f s" % [Game.name_of(win["id"]), float(win["time"])], Palette.HIGHLIGHT)
+		_show_winner_flag(win["id"])
+		hud.add_child(Fireworks.new())
 		set_prompt("")
 	if _post_started:
 		_post_t += delta
 		if _post_t > 2.2:                        # let them clear the screen, then results
 			_finish_race()
+
+## The winner's flag above the finish banner.
+func _show_winner_flag(id: StringName) -> void:
+	var flag := FlagRenderer.new()
+	flag.waving = false
+	flag.set_country(id)
+	flag.size = Vector2(66, 44)
+	flag.position = Vector2(Palette.BASE_WIDTH / 2.0 - 33.0, 140.0)
+	hud.add_child(flag)
 
 ## A finished runner keeps sprinting right (never celebrates on the line) until it's off-screen.
 func _coast(r: Dictionary, delta: float) -> void:
@@ -265,19 +297,34 @@ func _draw() -> void:
 		y += 10.0
 	_draw_tape()
 
-## Finishing tape across the lanes; snaps apart when the first runner crosses.
+## Finishing tape across the lanes; whips apart when the first runner breasts it.
 func _draw_tape() -> void:
 	var top: float = LANE_Y[LANE_Y.size() - 1] - 40.0
 	var bot: float = LANE_Y[0] - 26.0
 	if not tape_broken:
-		draw_line(Vector2(finish_x, top), Vector2(finish_x, bot), Palette.PAPER, 2.5)
+		# A taut ribbon bowed slightly toward the runners.
+		var pts := PackedVector2Array()
+		for i in 9:
+			var t := float(i) / 8.0
+			pts.append(Vector2(finish_x - sin(t * PI) * 4.0, lerpf(top, bot, t)))
+		draw_polyline(pts, Palette.PAPER, 4.0)
 		return
-	var p := clampf(tape_t / 0.5, 0.0, 1.0)
+	var p := clampf(tape_t / 0.65, 0.0, 1.0)
 	if p >= 1.0:
 		return
 	var by := clampf(tape_break_y, top, bot)
-	var recoil := sin(p * PI) * 26.0
 	var a := 1.0 - p
-	var col := Color(Palette.PAPER.r, Palette.PAPER.g, Palette.PAPER.b, a)
-	draw_line(Vector2(finish_x, top), Vector2(finish_x - recoil, lerpf(by, top, p)), col, 2.5)
-	draw_line(Vector2(finish_x, bot), Vector2(finish_x - recoil, lerpf(by, bot, p)), col, 2.5)
+	var col := Color(1, 1, 1, a)
+	_tape_half(by, top, p, col)
+	_tape_half(by, bot, p, col)
+
+## One snapped half whipping back to its post, curling as it recoils.
+func _tape_half(break_y: float, post_y: float, p: float, col: Color) -> void:
+	var whip := sin(p * PI) * 48.0                       # kicks forward (away from the runner), then settles
+	var free := Vector2(finish_x + whip, lerpf(break_y, post_y, ease(p, 0.35)))
+	var post := Vector2(finish_x, post_y)
+	var pts := PackedVector2Array()
+	for i in 9:
+		var t := float(i) / 8.0
+		pts.append(post.lerp(free, t) + Vector2(sin(t * PI) * whip * 0.5, 0.0))
+	draw_polyline(pts, col, 3.5)

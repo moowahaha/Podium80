@@ -81,7 +81,7 @@ func _event_ready() -> void:
 	_info.position = Vector2(15, 70)
 	hud.add_child(_info)
 
-	AudioBus.loop_crowd(true, -22.0)
+	AudioBus.loop_crowd(true, -13.0)
 	_begin_attempt()
 
 func _begin_attempt() -> void:
@@ -196,8 +196,8 @@ func _build_sand_texture() -> void:
 	_sand_flecks.clear()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 42
-	var y0 := stadium.ground_y - 8.0
-	var y1 := stadium.ground_y + 34.0
+	var y0 := stadium.ground_y - Stadium.RUNWAY_UP + 2.0
+	var y1 := stadium.ground_y + Stadium.RUNWAY_DOWN - 2.0
 	var base := Color("d9c48a")
 	var count := int((WORLD_W - BOARD_X) * 1.1)
 	for _i in count:
@@ -213,8 +213,8 @@ func _build_sand_texture() -> void:
 		})
 
 func _draw() -> void:
-	# Sand pit + take-off board over the runway.
-	draw_rect(Rect2(BOARD_X, stadium.ground_y - 9.0, WORLD_W - BOARD_X, 44.0), Color("d9c48a"))
+	# Sand pit + take-off board over the runway (fills the full strip thickness).
+	draw_rect(Rect2(BOARD_X, stadium.ground_y - Stadium.RUNWAY_UP, WORLD_W - BOARD_X, Stadium.RUNWAY_UP + Stadium.RUNWAY_DOWN), Color("d9c48a"))
 	for s in _sand_flecks:
 		draw_rect(Rect2(s["x"], s["y"], s["w"], s["h"]), s["col"])
 	draw_rect(Rect2(BOARD_X - 7.5, stadium.ground_y - 7.5, 10.0, 15.0), Palette.PAPER)   # board

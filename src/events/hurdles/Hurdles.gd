@@ -28,6 +28,7 @@ var state_t := 0.0
 var set_wait := 1.2
 var elapsed := 0.0
 var _clock: Label
+var _dist_lbl: Label
 var _post_started := false        # all runners crossed; now running off-screen before results
 var _post_t := 0.0
 var hurdle_fall := {}             # (hurdle_index*100 + lane) -> tip progress 0..1
@@ -42,6 +43,8 @@ func _music_key() -> StringName:
 
 func _event_ready() -> void:
 	ai_values = Game.roll_ai_values()
+	for aid in ai_values:
+		ai_values[aid] = float(ai_values[aid]) * 0.93     # tougher AI — hurdles play too easy otherwise
 
 	stadium = Stadium.new()
 	stadium.world_width = WORLD_W
@@ -68,10 +71,15 @@ func _event_ready() -> void:
 		ath.set_depth(LANE_SCALE[lane])
 		ath.z_index = LANE_Y.size() - lane      # front lanes draw on top of back lanes
 		add_child(ath)
+		var human := Game.is_human(id)
+		var eng: RunEngine = null
+		if human:
+			eng = RunEngine.new()
+			eng.max_speed *= 0.94                          # slight player handicap
 		runners.append({
-			"id": id, "human": Game.is_human(id), "pidx": Game.player_index_of(id),
+			"id": id, "human": human, "pidx": Game.player_index_of(id),
 			"lane": lane, "node": ath, "base_y": LANE_Y[lane],
-			"engine": (RunEngine.new() if Game.is_human(id) else null),
+			"engine": eng,
 			"target": float(ai_values.get(id, 15.0)),
 			"dist": 0.0, "done": false, "time": 0.0,
 			"air": false, "air_t": 0.0, "next_h": 0, "stumble": 0.0,
@@ -87,7 +95,11 @@ func _event_ready() -> void:
 	_clock.position = Vector2(Palette.BASE_WIDTH - 110, 10)
 	hud.add_child(_clock)
 
-	AudioBus.loop_crowd(true, -22.0)
+	_dist_lbl = UI.label("%dM TO GO" % int(DIST_M), 20, Palette.HIGHLIGHT)
+	_dist_lbl.position = Vector2(Palette.BASE_WIDTH - 160, 42)
+	hud.add_child(_dist_lbl)
+
+	AudioBus.loop_crowd(true, -13.0)
 	queue_redraw()
 	_enter(St.MARKS)
 
@@ -96,21 +108,23 @@ func _enter(s: St) -> void:
 	state_t = 0.0
 	match s:
 		St.MARKS:
-			banner_persist("ON YOUR MARKS", Palette.PAPER)
-		St.SET:
-			banner_persist("SET", Palette.HIGHLIGHT)
-			set_wait = randf_range(0.7, 1.7)
+			banner_persist("На старт!", Palette.PAPER)
 			AudioBus.play(&"beep")
+		St.SET:
+			banner_persist("Внимание!", Palette.HIGHLIGHT)
+			set_wait = randf_range(0.7, 1.7)
+			AudioBus.play(&"beep", 0.0, 1.15)
 		St.RUN:
-			banner("GO!", Palette.GOOD, 0.9)
+			banner("Марш!", Palette.GOOD, 0.9)
 			for r in runners:
 				if r["engine"] != null:
 					r["engine"].start()
 			set_prompt("A / B  RUN      LB  JUMP THE HURDLES")
-			AudioBus.play(&"go")
+			AudioBus.play(&"pistol", 15.0)
 
 func _process(delta: float) -> void:
 	super._process(delta)
+	queue_redraw()                       # re-draw the hurdles/tape every frame so they animate
 	match state:
 		St.MARKS:
 			state_t += delta
@@ -156,6 +170,10 @@ func _false_start() -> void:
 func _run_step(delta: float) -> void:
 	elapsed += delta
 	_clock.text = "%.2f" % elapsed
+	var lead := 0.0
+	for r in runners:
+		lead = maxf(lead, r["dist"])
+	_dist_lbl.text = "%dM TO GO" % maxi(0, int(ceil(DIST_M - lead)))
 	for r in runners:
 		if r["done"]:
 			_coast(r, delta)                     # keep running through the line and off-screen
@@ -210,12 +228,13 @@ func _run_step(delta: float) -> void:
 		_post_started = true
 		_post_t = 0.0
 		AudioBus.swell_crowd(-6.0)
-		var mine := ""
+		var win: Dictionary = runners[0]
 		for r in runners:
-			if r["human"]:
-				mine = "%s  %.2f s" % [CountryData.abbrev_of(r["id"]), r["time"]]
-				break
-		banner_persist("FINISH!  %s" % mine, Palette.HIGHLIGHT)
+			if float(r["time"]) < float(win["time"]):
+				win = r
+		banner_persist("%s   %.2f s" % [Game.name_of(win["id"]), float(win["time"])], Palette.HIGHLIGHT)
+		_show_winner_flag(win["id"])
+		hud.add_child(Fireworks.new())
 		set_prompt("")
 	if _post_started:
 		_post_t += delta
@@ -257,9 +276,10 @@ func _human_step(r: Dictionary, delta: float) -> void:
 		r["node"].set_state(Athlete.State.RUN if r["node"].run_speed > 0.012 else Athlete.State.IDLE)
 
 func _ai_step(r: Dictionary) -> void:
+	# Human-like pacing: ease out of the blocks (low early) and build through the race.
 	var x := clampf(elapsed / maxf(r["target"], 0.1), 0.0, 1.0)
-	r["dist"] = DIST_M * pow(x, 1.05)
-	r["node"].run_speed = clampf(1.1 - x * 0.15, 0.4, 1.0)
+	r["dist"] = DIST_M * pow(x, 1.3)
+	r["node"].run_speed = clampf(0.4 + x * 0.6, 0.4, 1.0)
 	r["node"].set_state(Athlete.State.RUN)
 	# little auto-hop near hurdles for flavour
 	if r["next_h"] < HURDLE_M.size():
@@ -270,7 +290,10 @@ func _ai_step(r: Dictionary) -> void:
 
 func _cross_hurdle(r: Dictionary) -> void:
 	if not r["human"]:
-		return    # AI clears cleanly
+		if randf() < 0.14:                          # AI mostly clears, but sometimes clatters one
+			hurdle_fall[r["next_h"] * 100 + r["lane"]] = 0.001
+			AudioBus.play(&"clang", -6.0)
+		return
 	var eng: RunEngine = r["engine"]
 	if r["air"]:
 		var p: float = r["air_t"] / JUMP_DUR
@@ -299,6 +322,15 @@ func _finish_race() -> void:
 			human_values[r["id"]] = r["time"]
 	set_prompt("")
 	finish(human_values, ai_values)
+
+## The winner's flag above the finish banner.
+func _show_winner_flag(id: StringName) -> void:
+	var flag := FlagRenderer.new()
+	flag.waving = false
+	flag.set_country(id)
+	flag.size = Vector2(66, 44)
+	flag.position = Vector2(Palette.BASE_WIDTH / 2.0 - 33.0, 140.0)
+	hud.add_child(flag)
 
 func _draw() -> void:
 	# Start line just ahead of the runners' feet (centred on START_X) so they line up behind it.
@@ -372,15 +404,27 @@ func _draw_tape() -> void:
 	var top: float = LANE_Y[LANE_Y.size() - 1] - 40.0
 	var bot: float = LANE_Y[0] - 26.0
 	if not tape_broken:
-		draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X, bot), Palette.PAPER, 2.5)
+		var pts := PackedVector2Array()
+		for i in 9:
+			var t := float(i) / 8.0
+			pts.append(Vector2(FINISH_X - sin(t * PI) * 4.0, lerpf(top, bot, t)))
+		draw_polyline(pts, Palette.PAPER, 4.0)
 		return
-	var p := clampf(tape_t / 0.5, 0.0, 1.0)
+	var p := clampf(tape_t / 0.65, 0.0, 1.0)
 	if p >= 1.0:
 		return
 	var by := clampf(tape_break_y, top, bot)
-	var recoil := sin(p * PI) * 26.0          # ends whip out then settle
 	var a := 1.0 - p
-	var col := Color(Palette.PAPER.r, Palette.PAPER.g, Palette.PAPER.b, a)
-	# upper half retracts toward the top anchor, lower toward the bottom
-	draw_line(Vector2(FINISH_X, top), Vector2(FINISH_X - recoil, lerpf(by, top, p)), col, 2.5)
-	draw_line(Vector2(FINISH_X, bot), Vector2(FINISH_X - recoil, lerpf(by, bot, p)), col, 2.5)
+	var col := Color(1, 1, 1, a)
+	_tape_half(by, top, p, col)
+	_tape_half(by, bot, p, col)
+
+func _tape_half(break_y: float, post_y: float, p: float, col: Color) -> void:
+	var whip := sin(p * PI) * 48.0
+	var free := Vector2(FINISH_X + whip, lerpf(break_y, post_y, ease(p, 0.35)))
+	var post := Vector2(FINISH_X, post_y)
+	var pts := PackedVector2Array()
+	for i in 9:
+		var t := float(i) / 8.0
+		pts.append(post.lerp(free, t) + Vector2(sin(t * PI) * whip * 0.5, 0.0))
+	draw_polyline(pts, col, 3.5)

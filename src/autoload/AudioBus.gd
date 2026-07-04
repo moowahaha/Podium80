@@ -109,6 +109,7 @@ func _build_library() -> void:
 	_sfx[&"whoosh"] = _noise(0.22, 3.0)
 	_sfx[&"points"] = _tone(784.0, 0.16, "square", 0.4, 1.8)
 	_sfx[&"fanfare"] = _make_fanfare()
+	_sfx[&"pistol"] = _make_pistol()
 
 ## A pitched tone. wave = "square"|"sine". decay = exp falloff strength. bend = end/start freq ratio.
 func _tone(freq: float, dur: float, wave := "square", decay := 0.5, bend := 1.0) -> AudioStreamWAV:
@@ -156,16 +157,22 @@ func _make_cheer() -> AudioStreamWAV:
 	return _wav(data)
 
 func _make_crowd() -> AudioStreamWAV:
-	# Longer low-passed noise bed for looping ambience.
-	var dur := 2.0
+	# A layered stadium murmur: a deep rumble + a mid chatter, modulated by slow swells (crowd waves).
+	# Swell frequencies complete whole cycles over `dur` so the loop point is seamless.
+	var dur := 3.0
 	var n := int(MIX_RATE * dur)
 	var data := PackedByteArray()
 	data.resize(n * 2)
-	var last := 0.0
+	var lp1 := 0.0     # deep rumble
+	var lp2 := 0.0     # mid chatter
 	for i in n:
+		var t := float(i) / MIX_RATE
 		var raw := randf() * 2.0 - 1.0
-		last = lerpf(last, raw, 0.12)
-		_put_sample(data, i, last * 0.5)
+		lp1 = lerpf(lp1, raw, 0.05)
+		lp2 = lerpf(lp2, raw, 0.30)
+		var swell := 0.72 + 0.28 * sin(TAU * (1.0 / dur) * t) + 0.14 * sin(TAU * (3.0 / dur) * t)
+		var s := (lp1 * 0.75 + lp2 * 0.5) * swell
+		_put_sample(data, i, clampf(s * 0.75, -1.0, 1.0))
 	var w := _wav(data)
 	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	w.loop_begin = 0
@@ -173,22 +180,47 @@ func _make_crowd() -> AudioStreamWAV:
 	return w
 
 func _make_fanfare() -> AudioStreamWAV:
-	# Three rising notes — victory sting.
-	var notes := [523.0, 659.0, 784.0, 1047.0]
-	var note_dur := 0.16
+	# A brassy triumphal trumpet call: a repeated-note run up a major arpeggio into a held top chord.
+	# [dur, freqs...] per step; multiple freqs = a chord. Brass timbre = sawtooth + light vibrato.
+	var seq := [
+		[0.12, [392.0]], [0.12, [392.0]], [0.18, [523.0]],
+		[0.12, [523.0]], [0.12, [659.0]], [0.60, [523.0, 659.0, 784.0]],
+	]
 	var data := PackedByteArray()
-	for ni in notes.size():
-		var f: float = notes[ni]
-		var n := int(MIX_RATE * note_dur)
-		var phase := 0.0
+	for step in seq:
+		var dur: float = step[0]
+		var freqs: Array = step[1]
+		var n := int(MIX_RATE * dur)
 		for i in n:
+			var t := float(i) / MIX_RATE
 			var prog: float = float(i) / float(max(1, n - 1))
-			phase += TAU * f / MIX_RATE
-			var s := 1.0 if sin(phase) >= 0.0 else -1.0
-			var env := exp(-1.5 * prog)
+			var vib := 1.0 + 0.006 * sin(TAU * 5.5 * t)      # gentle vibrato
+			var s := 0.0
+			for f in freqs:
+				var ph: float = fmod((f as float) * vib * t, 1.0)
+				s += (2.0 * ph - 1.0)                          # sawtooth = brassy
+			s /= float(freqs.size())
+			# soft attack, gentle decay so it rings out
+			var atk: float = clampf(prog / 0.06, 0.0, 1.0)
+			var env := atk * (0.55 + 0.45 * exp(-1.2 * prog))
 			var idx := data.size() / 2
 			data.resize(data.size() + 2)
-			_put_sample(data, idx, s * env * 0.5)
+			_put_sample(data, idx, s * env * 0.42)
+	return _wav(data)
+
+func _make_pistol() -> AudioStreamWAV:
+	# Loud starter crack: a bright transient over a low boom, heavily clipped so it barks and carries.
+	var dur := 0.3
+	var n := int(MIX_RATE * dur)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	var boom_ph := 0.0
+	for i in n:
+		var prog: float = float(i) / float(max(1, n - 1))
+		var crack := (randf() * 2.0 - 1.0) * exp(-18.0 * prog)     # fuller bright transient
+		boom_ph += TAU * 70.0 / MIX_RATE
+		var boom := sin(boom_ph) * exp(-8.0 * prog)               # bigger low thump
+		_put_sample(data, i, clampf(crack * 1.4 + boom * 1.05, -1.0, 1.0))
 	return _wav(data)
 
 func _put_sample(data: PackedByteArray, index: int, value: float) -> void:

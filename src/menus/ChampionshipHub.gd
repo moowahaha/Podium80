@@ -2,7 +2,7 @@ extends BaseScreen
 ## Championship hub shown before each event: current standings + the next event, with A to compete.
 ## Also the progression spine — after the fifth event it routes to the podium.
 
-const TITLE_SCENE := "res://src/menus/TitleScreen.tscn"
+const TITLE_SCENE := "res://src/menus/PlayerSelect.tscn"
 const RESULTS_SCENE := "res://src/menus/EventResults.tscn"
 
 var _t := 0.0
@@ -70,10 +70,5 @@ func _process(delta: float) -> void:
 func _compete() -> void:
 	_busy = true
 	AudioBus.play(&"select")
-	var scene: String = Game.current_event()["scene"]
-	if ResourceLoader.exists(scene):
-		SceneRouter.goto_scene(scene)
-	else:
-		# Event not built yet: simulate it so the championship loop stays fully playable.
-		Game.submit_event({})
-		SceneRouter.goto_scene(RESULTS_SCENE)
+	# Always via the event title card (it handles the fanfare + an unbuilt-event fallback).
+	SceneRouter.goto_scene("res://src/menus/EventIntro.tscn")

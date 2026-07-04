@@ -35,7 +35,7 @@ func _screen_ready() -> void:
 		flag.size = Vector2(50, 32)
 		add_child(flag)
 
-		var nm := UI.label("%s  %s" % [CountryData.abbrev_of(id), Game.name_of(id)], 20, _color(id))
+		var nm := UI.label(Game.name_of(id), 20, _color(id))
 		nm.position = Vector2(235, y + 5)
 		add_child(nm)
 
@@ -43,9 +43,10 @@ func _screen_ready() -> void:
 		mark.position = Vector2(570, y + 5)
 		add_child(mark)
 
-		var pts := UI.label("+%d" % int(r["points"]), 20, Palette.GOOD)
-		pts.position = Vector2(750, y + 5)
-		add_child(pts)
+		if not Game.single_event_mode:
+			var pts := UI.label("+%d" % int(r["points"]), 20, Palette.GOOD)
+			pts.position = Vector2(750, y + 5)
+			add_child(pts)
 		y += 55.0
 
 	var prompt := UI.center_label("PRESS  A  TO CONTINUE", 20, Palette.PAPER)
@@ -76,7 +77,7 @@ func _process(_delta: float) -> void:
 		_busy = true
 		AudioBus.play(&"select")
 		if Game.single_event_mode:
-			SceneRouter.goto_scene(MODE_SELECT)
+			SceneRouter.goto_scene(PODIUM)
 		elif Game.is_championship_over():
 			SceneRouter.goto_scene(PODIUM)
 		else:

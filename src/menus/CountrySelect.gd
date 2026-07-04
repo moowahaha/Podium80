@@ -16,9 +16,12 @@ var locked := [false, false]
 var _flags: Array = []
 var _athletes: Array = []
 var _t := 0.0
+var _bg: Texture2D
 
 func _screen_ready() -> void:
 	num_players = maxi(1, Game.pending_players)   # chosen on the mode screen
+	if ResourceLoader.exists("res://assets/backgrounds/character_select.png"):
+		_bg = load("res://assets/backgrounds/character_select.png")
 	ids = CountryData.all_ids()
 	var total := ids.size() * CARD_W + (ids.size() - 1) * GAP
 	var start_x := (Palette.BASE_WIDTH - total) / 2.0
@@ -130,13 +133,17 @@ func _start() -> void:
 	AudioBus.play(&"select")
 	if Game.pending_mode == "single":
 		Game.start_single_event(Game.pending_event_index, picks)
-		SceneRouter.goto_scene(String(Game.EVENTS[Game.pending_event_index]["scene"]))
+		SceneRouter.goto_scene("res://src/menus/EventIntro.tscn")
 	else:
 		Game.start_championship(picks)
 		SceneRouter.goto_scene(HUB_SCENE)
 
 func _paint_bg() -> void:
-	super._paint_bg()
+	if _bg:
+		draw_texture_rect(_bg, Palette.base_rect(), false)
+		draw_rect(Palette.base_rect(), Color(Palette.INK.r, Palette.INK.g, Palette.INK.b, 0.32))
+	else:
+		super._paint_bg()
 	var total := ids.size() * CARD_W + (ids.size() - 1) * GAP
 	var start_x := (Palette.BASE_WIDTH - total) / 2.0
 	for i in ids.size():

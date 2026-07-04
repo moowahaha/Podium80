@@ -71,7 +71,7 @@ func _event_ready() -> void:
 	_info.position = Vector2(15, 70)
 	hud.add_child(_info)
 
-	AudioBus.loop_crowd(true, -22.0)
+	AudioBus.loop_crowd(true, -13.0)
 	_begin_attempt()
 
 func _begin_attempt() -> void:
