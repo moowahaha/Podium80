@@ -6,6 +6,7 @@
   "godotVersion": 4,
   "entry": "game.pck",
   "multiplayer": true,
+  "nativeInput": true,
   "cover": "cover.png",
   "controls": {
     "up": "ArrowUp",

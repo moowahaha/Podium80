@@ -10,6 +10,7 @@ var _busy := false
 var _lbl: Label
 
 func _screen_ready() -> void:
+	Platform.reset_claims()   # fresh session: the first pad to press here becomes P1, the next P2
 	num_players = maxi(1, Game.pending_players)
 	UI.add_podium_logo(self, 60, 82)
 	_add_slogan(158.0)
