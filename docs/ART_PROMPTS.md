@@ -65,11 +65,28 @@ and sand pit). **Exactly 1920×540, seamlessly tileable.**
 **Suno:** [BLOCK] Build-and-release NES theme — staccato square ostinato that ramps then lands on a
 big triangle-bass downbeat, ~135 BPM. Tension of the run-up and the leap.
 
-## 4 · Hammer Throw — `assets/stadium/hammer.png` (960×540) + `assets/music/hammer.ogg`
+## 4 · Hammer Throw — **TOP-DOWN** — `assets/stadium/hammer.png` (top-down field) + `assets/music/hammer.ogg`
 
-**Image:** [BLOCK] Single-screen view across a grass infield throwing sector: green field lower half
-with faint sector lines fanning right, a suggested safety-cage frame at left, tiered crowd +
-floodlights + blue sky behind, red banners. Keep centre-left clear for a large thrower. **960×540.**
+The hammer throw is played **exclusively top-down** (bird's-eye), unlike the side-on races and jumps.
+The image is the whole playing field seen from above; the game overlays the spin gauge, the rotating
+hammer, the target-to-beat arc and the landing marker, and spins the thrower sprite in the circle. The
+**static** throwing circle, safety cage, grass sector and distance-arc lines are baked into the art —
+the game code is aligned to wherever they fall in the image (measure the circle position + sector
+angle from the generated file, then set the constants to match). Camera starts close on the thrower
+during the wind-up, then zooms out and follows the hammer flight.
+
+**Image:** [TOP-DOWN — this overrides the "Side-on view" line in the global STYLE block]
+> Top-down bird's-eye view of a hammer-throw field at a grand 1980 Soviet athletics stadium. 16-bit
+> SNES-era pixel art — richly detailed, vibrant, dithered shading, saturated palette. Landscape 16:9,
+> pure overhead perspective (no sky, no horizon). On the LEFT: a round pale-concrete throwing circle
+> enclosed at its back by a curved dark steel safety cage (net panels) that opens toward the right.
+> From the circle a ~35°-wide grass landing sector fans out to the RIGHT across the whole field, its
+> two straight edges marked by crisp white boundary lines, with a few faint white distance-arc lines
+> curving across it; mown grass with subtle stripes and tonal variation. Framing the field: a deep
+> red-orange running track along the top and bottom edges, and beyond it tiered stands packed with a
+> dense crowd, draped with long red Soviet banners and gold-trimmed flags. Warm midday light, soft
+> shadows. No text, no numbers, no UI, no athletes, no hammer; keep the circle + sector readable as the
+> focal point. Generate large (e.g. 1672×941); the game resizes to 960×540.
 
 **Suno:** [BLOCK] Heavy, spinning NES waltz in a minor key that accelerates like a whirling dance —
 chunky square chords, driving triangle bass, ~3/4 building to a release hit, ~130 BPM.
@@ -90,13 +107,48 @@ athletes) with room for confetti. **960×540.**
 march, celebratory noise rolls, slow-to-mid tempo ~100 BPM. Grand and emotional (a short chiptune
 "anthem" that could loop).
 
+## 7 · Event title cards & menu backgrounds — `assets/backgrounds/*.png` (960×540)
+
+Separate from the in-game stadium backdrops above, these are **full-screen scene art** shown before
+each event on the "PRESS ANY BUTTON" title card, and behind the character-select and podium screens.
+Generate large (e.g. **1672×941**) and the game resizes to 960×540. One per event, keyed by event id,
+plus two menu screens:
+
+| File | Used for |
+| --- | --- |
+| `sprint.png` | 100m sprint title card |
+| `sprint_400.png` | 400m title card |
+| `hurdles.png` | 110m hurdles title card |
+| `long_jump.png` | long jump title card |
+| `triple_jump.png` | triple jump title card |
+| `hammer.png` | hammer throw title card |
+| `character_select.png` | nation-select backdrop (Moscow skyline) |
+| `podium.png` | podium ceremony backdrop (Red Square, gold/silver/bronze blocks) |
+
+**Image:** [use the global STYLE block, but these are **full standalone scenes** — action and athletes
+are welcome here, unlike the empty gameplay backdrops] A dramatic 1980 Soviet-stadium scene themed to
+the event (sprinters exploding from the blocks, a hurdler mid-flight, a hammer thrower mid-spin, the
+Red Square medal podium with gold/silver/bronze blocks, the Moscow/Kremlin skyline for character
+select), 16-bit SNES pixel art, bold red banners + gold-star motifs, packed crowd, saturated palette.
+The game overlays large event-title text + a slogan, so keep the composition from being too busy dead
+centre. **Generate large; resized to 960×540.**
+
+> **Podium note:** colour-code the three podium blocks **gold (1st, centre/tallest), silver (2nd,
+> left), bronze (3rd, right)** with a clear flat top surface each — the game detects those colours to
+> stand the athletes on them.
+
 ---
 
 ## Integration notes
 
+- **Two kinds of art:** (1) in-game **stadium backdrops** in `assets/stadium/` — side-on and **tileable
+  1920×540** for the scrolling races/jumps, or the **top-down** field for the hammer; and (2) full-screen
+  **title-card / menu backgrounds** in `assets/backgrounds/` (§7), generated large and resized to 960×540.
 - **Dimensions:** single-screen art = **960×540**; side-on **scrolling** backdrops (track / long_jump)
   = **1920×540** and must **tile horizontally**. The triple jump and 400m reuse `track.png`. The game
-  renders at 960×540 (×2 to 1080p), so don't exceed these — larger is wasted on the console.
+  renders at 960×540 (×2 to 1080p). The hammer field is **top-down** (§4), not side-on/tiled.
+- The **100m Swim was removed**; the current events are 100m sprint, long jump, 110m hurdles, hammer
+  throw, triple jump and the 400m.
 - Backgrounds = **PNG**; music = **`.ogg`** (small, loops cleanly; `.mp3`/`.wav` also work).
 - Leave the bottom **~150 px** of side-on backdrops flat — the game overlays the track/pool, lanes and
   the ~96 px sprites there for gameplay clarity.

@@ -191,9 +191,12 @@ func _draw() -> void:
 	draw_colored_polygon(a, Palette.INFIELD.lightened(0.12))
 	draw_line(a[0], a[1], Palette.TRACK_LINE, 2.5)
 	draw_line(a[0], a[2], Palette.TRACK_LINE, 2.5)
-	# distance arcs
+	# distance arcs, labelled along the centre line
+	var font := ThemeDB.fallback_font
 	for m in [30, 50, 70, 90]:
-		draw_arc(CIRCLE, m * PX_PER_M, -FIELD_SECTOR, FIELD_SECTOR, 24, Color(1, 1, 1, 0.25), 2.5)
+		var r: float = m * PX_PER_M
+		draw_arc(CIRCLE, r, -FIELD_SECTOR, FIELD_SECTOR, 24, Color(1, 1, 1, 0.25), 2.5)
+		draw_string(font, CIRCLE + Vector2(r - 12.0, -5.0), "%dm" % m, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.75))
 	# target-to-beat arc
 	if target > 0.0:
 		draw_arc(CIRCLE, target * PX_PER_M, -FIELD_SECTOR, FIELD_SECTOR, 32, Palette.HIGHLIGHT, 3.5)
