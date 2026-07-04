@@ -69,11 +69,19 @@ floodlights + blue sky behind, red banners. Keep centre-left clear for a large t
 **Suno:** [BLOCK] Heavy, spinning NES waltz in a minor key that accelerates like a whirling dance —
 chunky square chords, driving triangle bass, ~3/4 building to a release hit, ~130 BPM.
 
-## 5 · 100m Swim — `assets/stadium/swim.png` (1920×540, tileable) + `assets/music/swim.ogg`
+## 5 · 100m Swim — `assets/stadium/swim.png` (1250×540, a WHOLE pool — not tileable) + `assets/music/swim.ogg`
 
-**Image:** [BLOCK] Long **side-on** aquatics-hall backdrop for a scrolling pool race: bright hall,
-tiered colourful crowd, floodlights/banners; bottom ~150 px a flat band (the game draws the blue pool
-water, lane ropes and side-on swimmers). **Exactly 1920×540, seamlessly tileable left↔right.**
+**Image:** [BLOCK] **Side-on** aquatics-hall backdrop showing **one complete 50 m competition pool end
+to end** — the swim is a fixed there-and-back (dive off the near wall, flip-turn at the far wall, finish
+back at the near wall), so the pool has TWO fixed ends and must **NOT** tile. Compose the whole pool in
+one frame: at the **far-left ~10 %** the **start / finish end** — raised starting blocks / diving
+platforms on the pool deck above the near wall; at the **far-right ~10 %** the **turn end** — the far
+pool wall with a row of **backstroke flags strung across** above it. Between them the lane water, and
+behind: bright hall, tiered colourful crowd, floodlights, red banners. Bottom ~150 px a flat blue band
+(the game overlays the pool water, lane ropes, the two end walls and side-on swimmers) — keep the deck /
+starting blocks just **above** that band at the left, and the turn wall at the right, so the code-drawn
+walls line up with the art. **Exactly 1250×540 (≈2.3∶1), a single fixed composition — do not make it
+seamless/tileable.**
 
 **Suno:** [BLOCK] Flowing but propulsive NES loop with a buoyant, splashy feel — bubbly arpeggiated
 square lead over a steady march bass, bright and energetic, ~150 BPM.
@@ -92,9 +100,11 @@ march, celebratory noise rolls, slow-to-mid tempo ~100 BPM. Grand and emotional 
 
 ## Integration notes
 
-- **Dimensions:** single-screen art = **960×540**; side-on scrolling backdrops (track / long_jump /
-  swim) = **1920×540** and must **tile horizontally**. The game renders at 960×540 (×2 to 1080p), so
-  don't exceed these — larger is wasted on the console.
+- **Dimensions:** single-screen art = **960×540**; side-on **scrolling** backdrops (track / long_jump)
+  = **1920×540** and must **tile horizontally**. The **swim** pool is the exception: **1250×540, a whole
+  fixed pool, NOT tileable** — the race is a fixed-length there-and-back, so the pool has real start and
+  turn ends that must not repeat. The game renders at 960×540 (×2 to 1080p), so don't exceed these —
+  larger is wasted on the console.
 - Backgrounds = **PNG**; music = **`.ogg`** (small, loops cleanly; `.mp3`/`.wav` also work).
 - Leave the bottom **~150 px** of side-on backdrops flat — the game overlays the track/pool, lanes and
   the ~96 px sprites there for gameplay clarity.
