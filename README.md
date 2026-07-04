@@ -2,7 +2,7 @@
 
 A polished retro pixel-art sports game for the **MeboboxOS** console, built in **Godot 4.6**.
 Inspired by the atmosphere of the 1980 summer games — a **fictional** international sporting event
-(no Olympic trademarks, rings, mascots, music, or the words "Olympic/Olympiad"). Five track & field
+(no Olympic trademarks, rings, mascots, music, or the words "Olympic/Olympiad"). Six track & field
 events form a championship; pick one of four nations and chase the most points.
 
 Full-widescreen 16:9, NES/SNES-inspired pixel art, a grainy CRT presentation, and arcade-responsive
@@ -10,16 +10,19 @@ controls running at 60 FPS.
 
 ## The championship
 
-Pick a nation (**USSR · East Germany · Great Britain · France**) and compete across five events for
-championship points; the nation with the most points after all five wins the podium.
+Pick a nation (**USSR · East Germany · Great Britain · Australia**) and compete across six events for
+championship points; the nation with the most points after all six wins the podium. Each event opens
+with a title card (artwork + name + a state slogan + a trumpet fanfare); the ceremony ends on the
+Red Square podium with the top three dancing under fireworks as their flags raise up the poles.
 
 | # | Event | Core mechanic |
 |---|-------|---------------|
-| 1 | 100m Sprint | Countdown + false-start detection, alternate **A/B** to run (light fatigue), dynamic-zoom 2-player races |
+| 1 | 100m Sprint | Start sequence (На старт!/Внимание!/Марш! + pistol), alternate **A/B** to run (light fatigue), dynamic-zoom 2-player races |
 | 2 | Long Jump | Alternate **A/B** for run-up, **LB** to take off on the board — distance = speed × timing; 3 attempts |
-| 3 | 110m Hurdles | Run with **A/B**, **LB** to clear each hurdle — clips slow you, collisions stumble; 2-player |
-| 4 | Hammer Throw | Rhythmic **A/B** to spin, **LB** to release in the legal sector; 3 attempts, target shown |
-| 5 | 100m Swim | **LB** to dive, alternate **A/B** to stroke, **LB** to flip-turn at the wall; 2-player |
+| 3 | 110m Hurdles | Run with **A/B**, **LB** to clear each hurdle — clips slow you and topple the hurdle; 2-player |
+| 4 | Hammer Throw | **Top-down**: rhythmic **A/B** to spin, **LB** to release in the legal sector; camera follows the throw; 3 attempts |
+| 5 | Triple Jump | Alternate **A/B** for run-up, **LB** to take off, then time the hop and step; 3 attempts |
+| 6 | 400m | Longer alternate-**A/B** race with pacing/fatigue; 2-player |
 
 ## Controls
 
@@ -60,8 +63,8 @@ logical buttons to the keys this game listens for:
 Godot's InputMap (`src/autoload/Platform.gd`) binds those exact keys **and** the physical gamepad, so
 the game is fully playable off-console with a keyboard or pad for development.
 
-The display uses a fixed **384×216** base (16:9) with `canvas_items`/`keep` stretch → pixel-perfect
-×5 to 1080p, matching the letterbox override the console applies.
+The display uses a fixed **960×540** base (16:9) with `canvas_items`/`keep` stretch → pixel-perfect
+×2 to 1080p, matching the letterbox override the console applies.
 
 **Publishing:** upload `build/podium-80.zip` (or this repo) via the Mebobox Creator Hub. Enter the
 same `controls` / `controlsP2` maps from `manifest.json` so LB/RB and player 2 are mapped.
@@ -76,16 +79,21 @@ Reusable components (`src/common/`): `Athlete`, `Stadium`, `FlagRenderer`, `Came
 `RunEngine`. Each event is a self-contained scene (`src/events/*`) extending `EventBase`. Menus/flow
 live in `src/menus/`.
 
-## Placeholder assets & final art
+## Art & assets
 
-Everything is **procedural placeholder** (drawn in code, audio synthesized) so final art and music
-drop in without touching gameplay code:
+Real pixel art is in for the flags, the per-nation athlete sprites (run/jump/hurdle/land/dance/…),
+the scrolling stadium backdrop, the **top-down hammer field**, and the full-screen event/menu
+backgrounds; anything without art falls back to the procedural drawing, and audio is still
+synthesized (see `AudioBus`). Drop-in paths:
 
-- Menu background → `assets/menu/background.png` · title art → `assets/menu/title.png`
-- Per-event stadium backdrops → `assets/stadium/{track,long_jump,hammer,vault,podium}.png`
+- Athlete sprite sheets → `assets/sprites/<nation>/<state>.png` (see `Athlete.SPRITE_STATES`)
+- Nation flags → `assets/flags/<nation>.png`
+- In-game stadium backdrops → `assets/stadium/{track,hammer_field}.png`
+- Event title cards & menu backgrounds → `assets/backgrounds/*.png`
 - A real pixel font → `UI.set_pixel_font()` (one call)
 
-Prompts for generating the SNES-style backdrops are in [`docs/ART_PROMPTS.md`](docs/ART_PROMPTS.md).
+Prompts for generating the SNES-style art (side-on backdrops, title cards, the top-down hammer
+field) are in [`docs/ART_PROMPTS.md`](docs/ART_PROMPTS.md).
 
 ## License / trademarks
 

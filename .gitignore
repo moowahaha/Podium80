@@ -4,6 +4,8 @@
 
 # OS / editor
 .DS_Store
+.idea/
+*.iml
 
 # Claude Code worktrees/session
 .claude/

@@ -22,6 +22,7 @@ func _ready() -> void:
 		_menu_bg_loaded = true
 		if ResourceLoader.exists(MENU_BG):
 			_menu_bg = load(MENU_BG)
+	AudioBus.loop_crowd(false)   # events start their own crowd bed; menus stay quiet unless they re-enable it
 	AudioBus.play_music(_music_key())
 	_screen_ready()
 
