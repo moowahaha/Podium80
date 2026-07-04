@@ -3,7 +3,7 @@ extends Node
 ## Data-driven: extend a country's list or add a country and names flow through automatically.
 
 const NAMES := {
-	&"USSR": ["YURI YAKFUR"],
+	&"USSR": ["Борис Бэрфур"],
 	&"GDR": ["PETER PROLL"],
 	&"GBR": ["CLIVE CRUMPET"],
 	&"AUS": ["BRUCE BONZA"],

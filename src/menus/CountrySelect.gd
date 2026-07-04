@@ -32,9 +32,12 @@ func _screen_ready() -> void:
 		add_child(flag)
 		_flags.append(flag)
 
-		var name_lbl := UI.center_label(CountryData.name_of(ids[i]), 18, Palette.PAPER)
-		name_lbl.position = Vector2(cx, 240)
-		name_lbl.size = Vector2(CARD_W, 25)
+		var name_lbl := UI.center_label(CountryData.name_of(ids[i]), 17, Palette.PAPER)
+		name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART   # set before size so width isn't clamped to the text
+		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		name_lbl.custom_minimum_size = Vector2(CARD_W - 12, 0)
+		name_lbl.position = Vector2(cx + 6, 236)
+		name_lbl.size = Vector2(CARD_W - 12, 100)
 		add_child(name_lbl)
 
 		var ath := Athlete.new()

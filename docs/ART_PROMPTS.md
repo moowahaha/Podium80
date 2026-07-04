@@ -18,13 +18,18 @@ Russian cliché melodies (*Korobeiniki / Kalinka* energy, Soviet-march feel) but
 ## Global blocks (paste at the top of each)
 
 **IMAGE (attach your existing `background.png` as a style reference):**
-> 16-bit SNES pixel art, bright painterly early-90s console-sports look matching the attached image.
+> **STYLE — MUST OBEY: flat 2D 16-bit SNES/pixel-art sprite graphics, hand-drawn early-90s console
+> game.** Visible chunky square pixels, limited ~64–128 colour palette, crisp dithering, hard-edged
+> flat colour. Read like a screenshot from a 1992 16-bit sports game, matching the attached image.
+> **NOT a photo, NOT photorealistic, NOT a 3D render, NOT CGI, no smooth gradients, no realistic
+> lighting/reflections, no depth-of-field, no anti-aliased soft edges.**
 > Soviet-1980 stadium: bold blue sky, tiered colourful crowd, concrete brutalist stands, tall
 > floodlight pylons, rows of small red pennants with gold-star motifs, red running track, an
-> onion-dome/tower city skyline silhouette on the horizon. Limited ~64–128 colour palette, crisp
-> dithering, clean chunky pixels. No text, no logos, no Olympic rings, no real mascots. Side-on view;
-> athlete sprites are ~96 px tall on a 960×540 screen (a figure ≈ a fifth of screen height). Keep the
-> bottom ~150 px a simple flat lane/apron band. Fill the frame, no border.
+> onion-dome/tower city skyline silhouette on the horizon. No text, no logos, no Olympic rings, no real
+> mascots. Side-on view. **The playing surface (track / pool / field) must be EMPTY — do NOT draw any
+> athletes, swimmers, runners or players on it; the game engine adds every athlete sprite itself.** A
+> crowd in the stands is fine, but no people on the track or in the water. Keep the bottom ~150 px a
+> simple flat empty lane/apron band. Fill the frame, no border.
 
 **MUSIC (Suno style):**
 > **8-bit NES chiptune**, authentic 2A03 sound — square-wave leads, a second square for harmony,
@@ -69,11 +74,20 @@ floodlights + blue sky behind, red banners. Keep centre-left clear for a large t
 **Suno:** [BLOCK] Heavy, spinning NES waltz in a minor key that accelerates like a whirling dance —
 chunky square chords, driving triangle bass, ~3/4 building to a release hit, ~130 BPM.
 
-## 5 · 100m Swim — `assets/stadium/swim.png` (1920×540, tileable) + `assets/music/swim.ogg`
+## 5 · 100m Swim — `assets/stadium/swim.png` (1250×540, a WHOLE pool — not tileable) + `assets/music/swim.ogg`
 
-**Image:** [BLOCK] Long **side-on** aquatics-hall backdrop for a scrolling pool race: bright hall,
-tiered colourful crowd, floodlights/banners; bottom ~150 px a flat band (the game draws the blue pool
-water, lane ropes and side-on swimmers). **Exactly 1920×540, seamlessly tileable left↔right.**
+**Image:** [BLOCK] **Flat 16-bit SNES pixel-art** (NOT photoreal, NOT 3D — see STYLE block) **side-on**
+aquatics-hall backdrop showing **one complete 50 m competition pool end to end** — the swim is a fixed
+there-and-back (dive off the near wall, flip-turn at the far wall, finish back at the near wall), so the
+pool has TWO fixed ends and must **NOT** tile. Compose the whole pool in one frame: at the **far-left
+~10 %** the **start / finish end** — raised starting blocks / diving platforms on the pool deck above
+the near wall; at the **far-right ~10 %** the **turn end** — the far pool wall with a row of
+**backstroke flags strung across** above it. Between them the empty lane water, and behind: bright hall,
+tiered colourful crowd, floodlights, red banners. **Leave the water EMPTY — NO swimmers, NO people in
+the pool; the game draws all the swimmers itself.** Bottom ~150 px a flat blue band (the game overlays
+lane ropes, the two end walls and the swimmer sprites) — keep the deck / starting blocks just **above**
+that band at the left, and the turn wall at the right, so the code-drawn walls line up with the art.
+**Exactly 1250×540 (≈2.3∶1), a single fixed composition — do not make it seamless/tileable.**
 
 **Suno:** [BLOCK] Flowing but propulsive NES loop with a buoyant, splashy feel — bubbly arpeggiated
 square lead over a steady march bass, bright and energetic, ~150 BPM.
@@ -92,9 +106,11 @@ march, celebratory noise rolls, slow-to-mid tempo ~100 BPM. Grand and emotional 
 
 ## Integration notes
 
-- **Dimensions:** single-screen art = **960×540**; side-on scrolling backdrops (track / long_jump /
-  swim) = **1920×540** and must **tile horizontally**. The game renders at 960×540 (×2 to 1080p), so
-  don't exceed these — larger is wasted on the console.
+- **Dimensions:** single-screen art = **960×540**; side-on **scrolling** backdrops (track / long_jump)
+  = **1920×540** and must **tile horizontally**. The **swim** pool is the exception: **1250×540, a whole
+  fixed pool, NOT tileable** — the race is a fixed-length there-and-back, so the pool has real start and
+  turn ends that must not repeat. The game renders at 960×540 (×2 to 1080p), so don't exceed these —
+  larger is wasted on the console.
 - Backgrounds = **PNG**; music = **`.ogg`** (small, loops cleanly; `.mp3`/`.wav` also work).
 - Leave the bottom **~150 px** of side-on backdrops flat — the game overlays the track/pool, lanes and
   the ~96 px sprites there for gameplay clarity.

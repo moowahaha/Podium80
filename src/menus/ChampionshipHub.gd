@@ -32,8 +32,8 @@ func _screen_ready() -> void:
 		add_child(flag)
 		_flags.append(flag)
 
-		var nm := UI.label(CountryData.name_of(id), 20, _row_color(id))
-		nm.position = Vector2(240, y + 5)
+		var nm := UI.label(CountryData.name_of(id), 16, _row_color(id))
+		nm.position = Vector2(240, y + 8)
 		add_child(nm)
 
 		var pts := UI.label("%d PTS" % int(r["points"]), 20, Palette.PAPER)

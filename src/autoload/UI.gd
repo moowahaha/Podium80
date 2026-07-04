@@ -23,6 +23,9 @@ func _ready() -> void:
 ## Drop in a real pixel font later without touching any screen.
 func set_pixel_font(font: Font) -> void:
 	_font = font
+	# Racing Sans One is Latin-only; fall back to a Cyrillic-capable face for Russian names/taglines.
+	if font is FontFile and ResourceLoader.exists("res://assets/fonts/RuslanDisplay.ttf"):
+		font.fallbacks = [load("res://assets/fonts/RuslanDisplay.ttf")]
 	if theme:
 		theme.default_font = font
 

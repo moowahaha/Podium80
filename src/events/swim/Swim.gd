@@ -38,6 +38,7 @@ func _event_ready() -> void:
 	stadium.world_width = WORLD_W
 	stadium.surface = "pool"
 	stadium.ground_y = LANE_Y[0]
+	stadium.backdrop_tile = false          # the pool is one fixed wide image (fixed start + turn ends)
 	stadium.set_backdrop("res://assets/stadium/swim.png")
 	add_child(stadium)
 

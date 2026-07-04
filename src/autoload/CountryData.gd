@@ -12,7 +12,7 @@ const ORDER: Array[StringName] = [&"USSR", &"GDR", &"GBR", &"AUS"]
 
 const COUNTRIES := {
 	&"USSR": {
-		"name": "CCCP",
+		"name": "Union of Soviet Socialist Republics",
 		"long_name": "SOVIET UNION",
 		"abbrev": "CCCP",
 		"accent": Color("e23b3b"),          # scoreboard / UI accent
@@ -26,7 +26,7 @@ const COUNTRIES := {
 		},
 	},
 	&"GDR": {
-		"name": "GDR",
+		"name": "German Democratic Republic",
 		"long_name": "EAST GERMANY",
 		"abbrev": "GDR",
 		"accent": Color("f2c841"),
@@ -40,7 +40,7 @@ const COUNTRIES := {
 		},
 	},
 	&"GBR": {
-		"name": "GREAT BRITAIN",
+		"name": "Great Britain",
 		"long_name": "GREAT BRITAIN",
 		"abbrev": "GBR",
 		"accent": Color("e6e6ea"),
@@ -54,7 +54,7 @@ const COUNTRIES := {
 		},
 	},
 	&"AUS": {
-		"name": "AUSTRALIA",
+		"name": "Australia",
 		"long_name": "AUSTRALIA",
 		"abbrev": "AUS",
 		"accent": Color("3bbf5a"),          # green — distinct from GDR gold
