@@ -31,7 +31,7 @@ const EVENTS: Array[Dictionary] = [
 	{
 		"id": &"hammer", "title": "HAMMER THROW", "unit": "m", "higher_better": true,
 		"two_player": false, "scene": "res://src/events/hammer/Hammer.tscn",
-		"ai": {"mean": 69.0, "sd": 6.5, "min": 38.0, "max": 84.0},
+		"ai": {"mean": 65.0, "sd": 6.5, "min": 38.0, "max": 80.0},
 	},
 	{
 		"id": &"triple_jump", "title": "TRIPLE JUMP", "unit": "m", "higher_better": true,

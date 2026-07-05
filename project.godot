@@ -1,6 +1,6 @@
 ; Podium '80 — Godot 4.x project.
-; Native game for MeboboxOS (exported to game.pck; runs on the console's bundled Godot 4 runtime,
-; keyboard-driven via the pad->key injector). See README.md and manifest.json.
+; Retro sports game, exported to game.pck for controller play on a TV console.
+; See README.md.
 
 config_version=5
 

@@ -147,7 +147,7 @@ func _windup(delta: float) -> void:
 		engine.tap_b()
 	engine.update(delta)
 	var spin := engine.speed_ratio()
-	angle = fposmod(angle + (2.2 + spin * 9.0) * delta, TAU)
+	angle = fposmod(angle + (2.2 + spin * 9.0) * 0.9 * delta, TAU)   # spin rotation 10% slower
 	if Input.is_action_just_pressed(Platform.act(pi, &"lb")):
 		_release(spin)
 
@@ -185,6 +185,7 @@ func _foul(reason: String) -> void:
 func _record(mark: float, foul: bool) -> void:
 	state = St.LANDED
 	if not foul:
+		target = maxf(target, mark)   # a mark that beats the target-to-beat moves the line up
 		if mark > float(best[cur_id]):
 			best[cur_id] = mark
 			banner("%.2f m  —  BEST!" % mark, Palette.HIGHLIGHT, 1.5)

@@ -181,11 +181,11 @@ func _phase_step(delta: float) -> void:
 				banner("GOOD", Palette.HIGHLIGHT, 0.5)
 				AudioBus.play(&"points", -4.0, 1.1)
 			else:
-				banner("EARLY", Palette.BAD, 0.5)
+				banner("TOO EARLY" if p < 0.9 else "TOO LATE", Palette.BAD, 0.5)
 			_start_phase(cur_phase + 1)
 		elif p >= 1.1:
 			momentum *= 0.45                 # missed the bounce
-			banner("MISTIMED!", Palette.BAD, 0.6)
+			banner("TOO LATE!", Palette.BAD, 0.6)
 			AudioBus.play(&"clang", -4.0)
 			_start_phase(cur_phase + 1)
 	else:
@@ -206,6 +206,7 @@ func _foul(reason: String) -> void:
 func _record(mark: float, foul: bool) -> void:
 	state = St.LANDED
 	if not foul:
+		target = maxf(target, mark)   # a mark that beats the target-to-beat moves the line up
 		if mark > float(best[cur_id]):
 			best[cur_id] = mark
 			banner("%.2f m  —  BEST!" % mark, Palette.HIGHLIGHT, 1.5)

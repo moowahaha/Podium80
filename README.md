@@ -1,6 +1,6 @@
 # Podium '80
 
-A polished retro pixel-art sports game for the **MeboboxOS** console, built in **Godot 4.6**.
+A polished retro pixel-art sports game built in **Godot 4.6**, made for controller play on a TV.
 Inspired by the atmosphere of the 1980 summer games — a **fictional** international sporting event
 (no Olympic trademarks, rings, mascots, music, or the words "Olympic/Olympiad"). Six track & field
 events form a championship; pick one of four nations and chase the most points.
@@ -26,26 +26,9 @@ Red Square podium with the top three dancing under fireworks as their flags rais
 
 ## Controls
 
-The console exposes only **D-pad + A + B + LB + RB** (START/SELECT are reserved by the OS for
-pause / hold-to-quit). The whole game is playable with those. Two players use two controllers
-(true per-pad input — see *MeboboxOS integration*).
-
-### Button → key mapping (must match the Creator Hub)
-
-The game binds these exact keys (`src/autoload/Platform.gd`) and ships them in `manifest.json`. When
-publishing to the Mebobox Creator Hub, set **both** maps — omitting `controlsP2` collapses both
-controllers onto Player 1, so the second pad does nothing.
-
-| Logical button | Player 1 (`controls`) | Player 2 (`controlsP2`) |
-|---|---|---|
-| Up | Arrow Up | `i` |
-| Down | Arrow Down | `k` |
-| Left | Arrow Left | `j` |
-| Right | Arrow Right | `l` |
-| A | Space | `f` |
-| B | `b` | `g` |
-| LB | `q` | `h` |
-| RB | `w` | `n` |
+Everything plays on **D-pad + A + B + LB + RB** (START/SELECT are reserved for pause / hold-to-quit).
+Two players use two controllers — player 1 is the first-connected pad, player 2 the second. The game
+reads both gamepads and the keyboard, so it's fully playable with a pad or a keyboard for development.
 
 ## Running & building
 
@@ -60,31 +43,14 @@ godot --headless --import     # import resources (first run / CI)
 Handy dev flags (see `src/autoload/DevTools.gd`):
 
 ```sh
-godot --scene res://src/events/vault/Vault.tscn --event 4     # jump to a scene/event
+godot --scene res://src/events/hammer/Hammer.tscn --event 3   # jump to a scene/event
 godot --sim 5 --scene res://src/menus/Podium.tscn             # simulate a full championship
 godot --shot out.png --shot-delay 1.2                         # render a frame to PNG (visual QA)
 godot --headless --runtest                                    # print the run-mechanic balance table
 ```
 
-## MeboboxOS integration
-
-MeboboxOS runs this as a **native** game: it launches `game.pck` on its bundled Godot 4 ARM64
-runtime, firejail-sandboxed and fullscreen (`agent/src/native.js`). The game is **keyboard-driven** —
-on the console a pad→keyboard injector (`agent/mebobox-input.py`) translates each controller into
-synthetic key presses, so the game never reads the pad directly. `manifest.json` maps the console's
-logical buttons to the keys this game listens for:
-
-- **Player 1:** arrows, A=Space, B=b, LB=q, RB=w
-- **Player 2:** i/k/j/l, A=f, B=g, LB=h, RB=n (`controlsP2` — drives true local 2-player)
-
-Godot's InputMap (`src/autoload/Platform.gd`) binds those exact keys **and** the physical gamepad, so
-the game is fully playable off-console with a keyboard or pad for development.
-
-The display uses a fixed **960×540** base (16:9) with `canvas_items`/`keep` stretch → pixel-perfect
-×2 to 1080p, matching the letterbox override the console applies.
-
-**Publishing:** upload `build/podium-80.zip` (or this repo) via the Mebobox Creator Hub. Enter the
-same `controls` / `controlsP2` maps from `manifest.json` so LB/RB and player 2 are mapped.
+The game renders at a fixed **960×540** 16:9 base with `canvas_items` / `keep` stretch, so it scales
+pixel-perfect (×2 to 1080p) with letterboxing.
 
 ## Architecture
 

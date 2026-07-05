@@ -3,7 +3,7 @@ extends Node
 ##
 ## Central place for the retro colour scheme and the fixed 16:9 pixel-art base resolution, so the
 ## look can be retuned in one file. All gameplay/menus render into this base and are scaled up
-## pixel-perfect by the canvas_items stretch (see project.godot / MeboboxOS override.cfg).
+## pixel-perfect by the canvas_items stretch (see project.godot).
 
 # --- Base resolution (16:9, x2 = 1920x1080 exactly => pixel-perfect on the console) ---
 const BASE_WIDTH: int = 960

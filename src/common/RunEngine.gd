@@ -10,13 +10,13 @@ class_name RunEngine
 ##    adds speed scaled by (1 - fatigue); fatigue rises per tap and recovers over time, so there's an
 ##    optimal sustainable rhythm rather than "mash infinitely fast = infinitely fast".
 
-# Tunables (m/s unless noted). Tuned so a good sustained rhythm gives a realistic ~10.8-11.5s 100m
-# (competitive with the AI field, mean 11.2s), poor rhythm loses, and impossible mashing plateaus
-# rather than scaling forever (see DevTools --runtest).
-var impulse := 0.62            # speed added per valid alternation at zero fatigue
-var drag := 1.9               # natural deceleration (per second, proportional-ish)
+# Tunables (m/s unless noted). Tuned so a COMFORTABLE adult rhythm is competitive: ~5 taps/s ties the
+# AI field (mean 11.2s) at ~11.4s, ~7 taps/s wins at ~10.8s; barely tapping loses and impossible
+# mashing plateaus rather than scaling forever (see DevTools --runtest).
+var impulse := 0.82            # speed added per valid alternation at zero fatigue
+var drag := 1.48              # natural deceleration (per second, proportional-ish)
 var max_speed := 10.6
-var fatigue_gain := 0.03       # fatigue added per tap
+var fatigue_gain := 0.026      # fatigue added per tap
 var fatigue_recover := 0.5     # fatigue recovered per second
 var fatigue_cap := 0.5         # floors impulse at (1-cap): faster is never WORSE, just plateaus
 

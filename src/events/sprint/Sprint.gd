@@ -50,7 +50,7 @@ func _event_ready() -> void:
 	# The 400m plays too easy: give the AI faster target times (its shown + scored result both scale).
 	if dist_m >= 200.0:
 		for aid in ai_values:
-			ai_values[aid] = float(ai_values[aid]) * 0.93
+			ai_values[aid] = float(ai_values[aid]) * 0.96
 
 	stadium = Stadium.new()
 	stadium.world_width = world_w
@@ -83,7 +83,7 @@ func _event_ready() -> void:
 		if human:
 			eng = RunEngine.new()
 			if dist_m >= 200.0:
-				eng.max_speed *= 0.94        # slight player handicap in the long race
+				eng.max_speed *= 0.97        # slight player handicap in the long race
 		runners.append({
 			"id": id, "human": human, "pidx": Game.player_index_of(id),
 			"lane": lane, "node": ath,

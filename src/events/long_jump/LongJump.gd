@@ -167,6 +167,7 @@ func _foul(reason: String) -> void:
 func _record(mark: float, foul: bool) -> void:
 	state = St.LANDED
 	if not foul:
+		target = maxf(target, mark)   # a mark that beats the target-to-beat moves the line up
 		if mark > float(best[cur_id]):
 			best[cur_id] = mark
 			banner("%.2f m  —  BEST!" % mark, Palette.HIGHLIGHT, 1.4)
