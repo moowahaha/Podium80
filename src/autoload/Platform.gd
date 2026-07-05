@@ -3,8 +3,7 @@ extends Node
 ##
 ## Builds the InputMap at runtime, so there's a single source of truth. The game reads BOTH the
 ## keyboard and physical gamepads, so it plays with either. Two players use two gamepads (or the two
-## keyboard maps below when developing): player 1 is the first-connected pad (device 0), player 2 the
-## second (device 1). Logical buttons are D-pad + A + B + LB + RB — START/SELECT are reserved for
+## keyboard maps below when developing): player 1 is the first-connected pad, player 2 the next. Logical buttons are D-pad + A + B + LB + RB — START/SELECT are reserved for
 ## pause / hold-to-quit and never used by gameplay.
 ##   P1 keys: arrows, A=Space, B=B, LB=Q, RB=W
 ##   P2 keys: I/K/J/L,      A=F, B=G, LB=H, RB=N
@@ -29,6 +28,13 @@ const JOY := {
 	&"lb": JOY_BUTTON_LEFT_SHOULDER, &"rb": JOY_BUTTON_RIGHT_SHOULDER,
 }
 
+# Player slot -> the Godot joypad device id currently bound to it (-1 = none).
+var _pad_slot := [-1, -1]
+
+func _ready() -> void:
+	Input.joy_connection_changed.connect(_on_joy_connection)
+	_assign_pads()
+
 func _enter_tree() -> void:
 	# React to input the instant it arrives instead of accumulating it to the render frame — noticeably
 	# snappier for the alternate-tap running (at a small CPU cost).
@@ -52,7 +58,8 @@ func _add_player_actions(player: int, keys: Dictionary) -> void:
 		InputMap.add_action(action, 0.5)
 		InputMap.action_add_event(action, _key(keys[btn]))          # physical keycode (layout-independent)
 		InputMap.action_add_event(action, _key_logical(keys[btn]))  # logical keycode (some input paths deliver keys this way)
-		InputMap.action_add_event(action, _joy(JOY[btn], player))   # gamepad: player 1 = device 0, player 2 = device 1
+		# Gamepad events bind to a device dynamically (see _assign_pads) so P1/P2 track the actual
+		# connected pads and survive hot-plug/unplug — never a hardcoded device index.
 
 func _key(keycode: Key) -> InputEventKey:
 	var e := InputEventKey.new()
@@ -76,6 +83,31 @@ func _ensure_event(action: StringName, ev: InputEvent) -> void:
 		InputMap.add_action(action)
 	if not InputMap.action_has_event(action, ev):
 		InputMap.action_add_event(action, ev)
+
+# --- Gamepad device -> player assignment --------------------------------------
+# A pad's Godot device id isn't a stable P1/P2 (it depends on what else is plugged in and on connection
+# order), so we assign at runtime: P1 = the first-connected pad, P2 = the next, rebinding on every
+# connect/disconnect — so unplugging a device before or during play just re-picks the players.
+func _on_joy_connection(_device: int, _connected: bool) -> void:
+	_assign_pads()
+
+func _assign_pads() -> void:
+	var pads := Input.get_connected_joypads()   # connected device ids, ascending (~ connection order)
+	for slot in 2:
+		var dev: int = pads[slot] if slot < pads.size() else -1
+		if dev != _pad_slot[slot]:
+			_pad_slot[slot] = dev
+			_bind_joy(slot, dev)
+
+## (Re)bind player `player`'s gamepad events to `device` (-1 = none), leaving the keyboard events intact.
+func _bind_joy(player: int, device: int) -> void:
+	for btn in BUTTONS:
+		var action := act(player, btn)
+		for ev in InputMap.action_get_events(action):
+			if ev is InputEventJoypadButton:
+				InputMap.action_erase_event(action, ev)
+		if device >= 0:
+			InputMap.action_add_event(action, _joy(JOY[btn], device))
 
 # --- Query API (players are 0-indexed) ----------------------------------------
 
