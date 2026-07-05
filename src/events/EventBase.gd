@@ -58,11 +58,12 @@ func _build_hud() -> void:
 	_prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	hud.add_child(_prompt)
 
-	# All-time record to beat (top-right), shown once one exists.
+	# All-time record to beat, laid across the top-centre — clear of the title on the left and the race
+	# clock on the right. Shown once one exists.
 	_record_lbl = UI.label("", 16, Palette.HIGHLIGHT_DIM)
-	_record_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_record_lbl.position = Vector2(Palette.BASE_WIDTH - 315, 14)
-	_record_lbl.size = Vector2(300, 22)
+	_record_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_record_lbl.position = Vector2(0, 16)
+	_record_lbl.size = Vector2(Palette.BASE_WIDTH, 22)
 	hud.add_child(_record_lbl)
 	_refresh_record()
 
