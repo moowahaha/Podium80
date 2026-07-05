@@ -147,7 +147,7 @@ func _windup(delta: float) -> void:
 		engine.tap_b()
 	engine.update(delta)
 	var spin := engine.speed_ratio()
-	angle = fposmod(angle + (2.2 + spin * 9.0) * 0.9 * delta, TAU)   # spin rotation 10% slower
+	angle = fposmod(angle + (2.2 + spin * 9.0) * 0.81 * delta, TAU)   # spin rotation ~19% slower (more time to release)
 	if Input.is_action_just_pressed(Platform.act(pi, &"lb")):
 		_release(spin)
 

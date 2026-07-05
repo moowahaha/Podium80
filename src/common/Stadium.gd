@@ -13,6 +13,8 @@ class_name Stadium
 @export var backdrop_tile := true       # true: repeat/mirror the art; false: one fixed wide image (pool)
 
 const INFIELD_H := 20.0        # depth of the grassy infield strip between the stand wall and track
+const APRON_DROP := 360.0       # how far the grassy apron extends below the base viewport (for zoom-out)
+const TOP_FADE := 320.0         # height of the sky->black fade above the backdrop (for zoom-out)
 # Runway mode (jump events): a single run strip flanked by grass, instead of the full lane track.
 @export var runway := false
 const RUNWAY_UP := 32.0        # run strip extends this far above the athlete line...
@@ -27,6 +29,8 @@ var _t := 0.0
 var _crowd: Array = []         # [{x, y, base_col, phase, w, h}]
 var _grass: Array = []         # static grass blades over the infield strip (seeded)
 var _track_grain: Array = []   # static grain specks over the running track (seeded)
+var _apron_grain: Array = []    # static grass texture for the apron below the track (seeded)
+var _sky_top_col := Palette.SKY_TOP   # backdrop's top colour, for the sky->black fade above it
 
 func _ready() -> void:
 	z_index = -10          # always the backmost layer, so event decorations + athletes draw on top
@@ -42,6 +46,11 @@ func _ready() -> void:
 func set_backdrop(path: String) -> void:
 	if ResourceLoader.exists(path):
 		backdrop = load(path)
+		var img := backdrop.get_image()
+		if img != null:
+			if img.is_compressed():
+				img.decompress()
+			_sky_top_col = img.get_pixel(img.get_width() / 2, 0)
 		queue_redraw()
 
 func _build_crowd() -> void:
@@ -108,6 +117,14 @@ func _build_ground_texture() -> void:
 			"h": rng.randf_range(1.0, 2.0),
 			"col": col2,
 		})
+	# Grass texture for the apron below the track — a mown field the zoomed-out race camera shows
+	# instead of a black strip.
+	_apron_grain.clear()
+	var apron_bot := Palette.BASE_HEIGHT + APRON_DROP
+	for _j in int(world_width * 0.8):
+		var acol := Palette.INFIELD.lightened(rng.randf_range(0.06, 0.24)) if rng.randf() < 0.5 else Palette.INFIELD.darkened(rng.randf_range(0.10, 0.34))
+		acol.a = rng.randf_range(0.4, 0.85)
+		_apron_grain.append({"x": rng.randf_range(0.0, world_width), "y": rng.randf_range(TRACK_BOTTOM, apron_bot), "w": rng.randf_range(1.5, 3.5), "h": rng.randf_range(2.0, 5.0), "col": acol})
 
 ## Runway mode: grass blades scattered across the whole field (except under the strip) + grain on the strip.
 func _build_runway_texture(rng: RandomNumberGenerator) -> void:
@@ -138,6 +155,12 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var w := world_width
+	# Fade the area above the sky from the backdrop's top colour to black, so a zoomed-out camera sees
+	# a soft transition instead of a hard black edge above the backdrop.
+	var fade_steps := 16
+	for fi in fade_steps:
+		var ft := float(fi) / float(fade_steps)
+		draw_rect(Rect2(0, -TOP_FADE + TOP_FADE * ft, w, TOP_FADE / fade_steps + 1.0), Color(0, 0, 0).lerp(_sky_top_col, ft))
 	if backdrop:
 		var th := float(Palette.BASE_HEIGHT)
 		if backdrop_tile:
@@ -227,6 +250,18 @@ func _draw_track(w: float) -> void:
 		while m < w:
 			draw_rect(Rect2(m, TRACK_BOTTOM - 10.0, 2.5, 7.5), Palette.TRACK_LINE * Color(1, 1, 1, 0.5))
 			m += 50.0
+	# Grassy apron below the track, tall enough that a zoomed-out camera never reveals a black strip.
+	var apron_bot2 := Palette.BASE_HEIGHT + APRON_DROP
+	draw_rect(Rect2(0, TRACK_BOTTOM, w, apron_bot2 - TRACK_BOTTOM), Palette.INFIELD.darkened(0.10))
+	var sy := TRACK_BOTTOM
+	var si := 0
+	while sy < apron_bot2:
+		if si % 2 == 1:
+			draw_rect(Rect2(0, sy, w, 24.0), Palette.INFIELD.darkened(0.03))
+		sy += 24.0
+		si += 1
+	for a in _apron_grain:
+		draw_rect(Rect2(a["x"], a["y"], a["w"], a["h"]), a["col"])
 
 ## A single run strip (the runway) down the middle of a grass field — for the jump events.
 func _draw_runway(w: float) -> void:
