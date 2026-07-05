@@ -16,6 +16,7 @@ var _prompt: Label
 var _banner: Label
 var _banner_t := 0.0
 var _finished := false
+var _record_lbl: Label
 
 func _ready() -> void:
 	_build_hud()
@@ -57,6 +58,14 @@ func _build_hud() -> void:
 	_prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	hud.add_child(_prompt)
 
+	# All-time record to beat (top-right), shown once one exists.
+	_record_lbl = UI.label("", 16, Palette.HIGHLIGHT_DIM)
+	_record_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_record_lbl.position = Vector2(Palette.BASE_WIDTH - 315, 14)
+	_record_lbl.size = Vector2(300, 22)
+	hud.add_child(_record_lbl)
+	_refresh_record()
+
 func _process(delta: float) -> void:
 	if _banner_t > 0.0:
 		_banner_t -= delta
@@ -95,10 +104,43 @@ func finish(human_values: Dictionary, ai_values: Dictionary = {}) -> void:
 	if _finished:
 		return
 	_finished = true
+	var got_record := _check_record(human_values)
 	Game.submit_event(human_values, ai_values)
 	set_prompt("")
-	await get_tree().create_timer(0.6).timeout
+	await get_tree().create_timer(2.8 if got_record else 0.6).timeout
 	SceneRouter.goto_scene(RESULTS_SCENE)
+
+## Show/refresh this event's all-time record in the HUD (blank until one is set).
+func _refresh_record() -> void:
+	if _record_lbl == null:
+		return
+	var ev := Game.current_event()
+	var r := Records.best(ev["id"])
+	_record_lbl.text = "" if is_nan(r) else "RECORD  %s" % _fmt_mark(r, String(ev["unit"]))
+
+func _fmt_mark(v: float, unit: String) -> String:
+	return "%.2f %s" % [v, unit]
+
+## If a human beat the stored record for this event, save it and celebrate. Returns true on a record.
+func _check_record(human_values: Dictionary) -> bool:
+	var ev := Game.current_event()
+	var hb := bool(ev["higher_better"])
+	var best_v := NAN
+	for id in human_values:
+		if not Game.is_human(id):
+			continue
+		var v := float(human_values[id])
+		if is_nan(best_v) or (v > best_v if hb else v < best_v):
+			best_v = v
+	if not Records.try_set(ev["id"], best_v, hb):
+		return false
+	banner("NEW RECORD!   %s" % _fmt_mark(best_v, String(ev["unit"])), Palette.HIGHLIGHT, 2.6)
+	AudioBus.swell_crowd(-3.0)
+	var fw := Fireworks.new()
+	hud.add_child(fw)
+	get_tree().create_timer(2.6).timeout.connect(fw.queue_free)
+	_refresh_record()
+	return true
 
 ## A short countdown helper (returns when done). Cancel by setting `cancel` via the callable check.
 func wait(seconds: float) -> void:
