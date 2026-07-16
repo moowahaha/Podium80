@@ -1,6 +1,6 @@
 extends EventBase
 ## Event 4 — Hammer Throw (top-down).
-## Alternate A/B to build spin speed; press LB to release. The thrower (top-down hold sprite) spins in
+## Alternate A/B to build spin speed; press L to release. The thrower (top-down hold sprite) spins in
 ## the circle with the hammer sweeping on its chain; release while the hammer is in the forward SECTOR
 ## for a legal throw (centre = best distance). The camera holds close on the thrower during the
 ## wind-up, then pulls back and FOLLOWS the hammer down the sector. Three attempts, best counts. The
@@ -107,7 +107,7 @@ func _begin_attempt() -> void:
 	var hp := "res://assets/sprites/%s/hammer-hold.png" % String(cur_id).to_lower()
 	_hold_tex = load(hp) if ResourceLoader.exists(hp) else null
 	_update_info()
-	set_prompt("A / B  SPIN     LB  RELEASE IN THE SECTOR")
+	set_prompt("A / B  SPIN     L  RELEASE IN THE SECTOR")
 
 func _update_info() -> void:
 	var cur: int = turn_order[turn_idx]
@@ -148,7 +148,7 @@ func _windup(delta: float) -> void:
 	engine.update(delta)
 	var spin := engine.speed_ratio()
 	angle = fposmod(angle + (2.2 + spin * 9.0) * 0.81 * delta, TAU)   # spin rotation ~19% slower (more time to release)
-	if Input.is_action_just_pressed(Platform.act(pi, &"lb")):
+	if Input.is_action_just_pressed(Platform.act(pi, &"l")):
 		_release(spin)
 
 func _release(spin: float) -> void:

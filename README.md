@@ -18,15 +18,15 @@ Red Square podium with the top three dancing under fireworks as their flags rais
 | # | Event | Core mechanic |
 |---|-------|---------------|
 | 1 | 100m Sprint | Start sequence (На старт!/Внимание!/Марш! + pistol), alternate **A/B** to run (light fatigue), dynamic-zoom 2-player races |
-| 2 | Long Jump | Alternate **A/B** for run-up, **LB** to take off on the board — distance = speed × timing; 3 attempts |
-| 3 | 110m Hurdles | Run with **A/B**, **LB** to clear each hurdle — clips slow you and topple the hurdle; 2-player |
-| 4 | Hammer Throw | **Top-down**: rhythmic **A/B** to spin, **LB** to release in the legal sector; camera follows the throw; 3 attempts |
-| 5 | Triple Jump | Alternate **A/B** for run-up, **LB** to take off, then time the hop and step; 3 attempts |
+| 2 | Long Jump | Alternate **A/B** for run-up, **L** to take off on the board — distance = speed × timing; 3 attempts |
+| 3 | 110m Hurdles | Run with **A/B**, **L** to clear each hurdle — clips slow you and topple the hurdle; 2-player |
+| 4 | Hammer Throw | **Top-down**: rhythmic **A/B** to spin, **L** to release in the legal sector; camera follows the throw; 3 attempts |
+| 5 | Triple Jump | Alternate **A/B** for run-up, **L** to take off, then time the hop and step; 3 attempts |
 | 6 | 400m | Longer alternate-**A/B** race with pacing/fatigue; 2-player |
 
 ## Controls
 
-Everything plays on **D-pad + A + B + LB + RB** (START/SELECT are reserved for pause / hold-to-quit).
+Everything plays on **D-pad + A + B + L + R** (START/SELECT are reserved for pause / hold-to-quit).
 Two players use two controllers — player 1 is the first-connected pad, player 2 the second. The game
 reads both gamepads and the keyboard, so it's fully playable with a pad or a keyboard for development.
 

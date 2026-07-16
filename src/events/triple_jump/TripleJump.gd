@@ -1,6 +1,6 @@
 extends EventBase
 ## Event 5 — Triple Jump.
-## Alternate A/B to build run-up speed, LB to take off at the board, then time an LB press at the
+## Alternate A/B to build run-up speed, L to take off at the board, then time an L press at the
 ## landing of the HOP and the STEP to spring into the next phase — good timing keeps your momentum,
 ## poor timing (or a miss) bleeds it. Distance is the sum of the three phases, measured from the board.
 ## Three attempts, best counts. Reuses the run / leap (hurdle) / flight & landing (long jump) sprites.
@@ -99,7 +99,7 @@ func _begin_attempt() -> void:
 	ath.foot_bias = 0.0
 	state = St.APPROACH
 	_update_info()
-	set_prompt("ALTERNATE  A / B  TO RUN     LB  TO TAKE OFF AT THE BOARD")
+	set_prompt("ALTERNATE  A / B  TO RUN     L  TO TAKE OFF AT THE BOARD")
 
 func _update_info() -> void:
 	var cur: int = turn_order[turn_idx]
@@ -125,7 +125,7 @@ func _approach(delta: float) -> void:
 	ath.set_state(Athlete.State.RUN if ath.run_speed > 0.012 else Athlete.State.IDLE)
 	var x := RUNUP_X + engine.distance * PX_PER_M
 	ath.position.x = x
-	if Input.is_action_just_pressed(Platform.act(pi, &"lb")):
+	if Input.is_action_just_pressed(Platform.act(pi, &"l")):
 		if x <= BOARD_X:
 			takeoff_x = x
 			momentum = engine.speed
@@ -144,7 +144,7 @@ func _start_phase(idx: int) -> void:
 	ath.foot_bias = LEAP_PLANT
 	AudioBus.play(&"jump", -2.0, 1.0 + idx * 0.1)
 	if idx < 2:
-		set_prompt("LB  —  %s !" % PHASE_NAME[idx + 1])
+		set_prompt("L  —  %s !" % PHASE_NAME[idx + 1])
 	else:
 		set_prompt("")
 
@@ -170,7 +170,7 @@ func _phase_step(delta: float) -> void:
 
 	if cur_phase < 2:
 		# Time the bounce into the next phase near the landing (p ~ 0.9).
-		if not pressed and Input.is_action_just_pressed(Platform.act(pi, &"lb")) and p >= 0.5:
+		if not pressed and Input.is_action_just_pressed(Platform.act(pi, &"l")) and p >= 0.5:
 			var acc := clampf(1.0 - absf(p - 0.9) / 0.32, 0.0, 1.0)
 			momentum *= lerpf(0.55, 0.98, acc)
 			pressed = true

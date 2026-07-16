@@ -1,6 +1,6 @@
 extends EventBase
 ## Event 3 — 110m Hurdles.
-## Same alternate-A/B running as the sprint, plus press LB to jump each hurdle. Clean timing keeps your
+## Same alternate-A/B running as the sprint, plus press L to jump each hurdle. Clean timing keeps your
 ## speed; a mistimed jump CLIPS the hurdle (speed loss); running into it grounded is a heavy COLLISION
 ## (big speed loss + a brief stumble). Two humans can race simultaneously; the rest are AI.
 
@@ -119,7 +119,7 @@ func _enter(s: St) -> void:
 			for r in runners:
 				if r["engine"] != null:
 					r["engine"].start()
-			set_prompt("A / B  RUN      LB  JUMP THE HURDLES")
+			set_prompt("A / B  RUN      L  JUMP THE HURDLES")
 			AudioBus.play(&"pistol", 15.0)
 
 func _process(delta: float) -> void:
@@ -263,7 +263,7 @@ func _human_step(r: Dictionary, delta: float) -> void:
 		eng.tap_a()
 	if Input.is_action_just_pressed(Platform.act(pi, &"b")):
 		eng.tap_b()
-	if Input.is_action_just_pressed(Platform.act(pi, &"lb")) and not r["air"]:
+	if Input.is_action_just_pressed(Platform.act(pi, &"l")) and not r["air"]:
 		r["air"] = true
 		r["air_t"] = 0.0
 		AudioBus.play(&"jump", -4.0)

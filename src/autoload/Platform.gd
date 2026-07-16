@@ -3,21 +3,21 @@ extends Node
 ##
 ## Builds the InputMap at runtime, so there's a single source of truth. The game reads BOTH the
 ## keyboard and physical gamepads, so it plays with either. Two players use two gamepads (or the two
-## keyboard maps below when developing): player 1 is the first-connected pad, player 2 the next. Logical buttons are D-pad + A + B + LB + RB — START/SELECT are reserved for
+## keyboard maps below when developing): player 1 is the first-connected pad, player 2 the next. Logical buttons are D-pad + A + B + L + R — START/SELECT are reserved for
 ## pause / hold-to-quit and never used by gameplay.
-##   P1 keys: arrows, A=Space, B=B, LB=Q, RB=W
-##   P2 keys: I/K/J/L,      A=F, B=G, LB=H, RB=N
+##   P1 keys: arrows, A=Space, B=B, L=Q, R=W
+##   P2 keys: I/K/J/L,      A=F, B=G, L=H, R=N
 
-const BUTTONS: Array[StringName] = [&"up", &"down", &"left", &"right", &"a", &"b", &"lb", &"rb"]
+const BUTTONS: Array[StringName] = [&"up", &"down", &"left", &"right", &"a", &"b", &"l", &"r"]
 
 # Per-player keyboard keycode for each logical button.
 const P1_KEYS := {
 	&"up": KEY_UP, &"down": KEY_DOWN, &"left": KEY_LEFT, &"right": KEY_RIGHT,
-	&"a": KEY_SPACE, &"b": KEY_B, &"lb": KEY_Q, &"rb": KEY_W,
+	&"a": KEY_SPACE, &"b": KEY_B, &"l": KEY_Q, &"r": KEY_W,
 }
 const P2_KEYS := {
 	&"up": KEY_I, &"down": KEY_K, &"left": KEY_J, &"right": KEY_L,
-	&"a": KEY_F, &"b": KEY_G, &"lb": KEY_H, &"rb": KEY_N,
+	&"a": KEY_F, &"b": KEY_G, &"l": KEY_H, &"r": KEY_N,
 }
 # Logical button -> standard-gamepad button index (W3C / SDL layout). We rely on the platform's
 # controller database to normalise each pad to these standard indices, so we don't remap per-controller.
@@ -25,7 +25,7 @@ const JOY := {
 	&"up": JOY_BUTTON_DPAD_UP, &"down": JOY_BUTTON_DPAD_DOWN,
 	&"left": JOY_BUTTON_DPAD_LEFT, &"right": JOY_BUTTON_DPAD_RIGHT,
 	&"a": JOY_BUTTON_A, &"b": JOY_BUTTON_B,
-	&"lb": JOY_BUTTON_LEFT_SHOULDER, &"rb": JOY_BUTTON_RIGHT_SHOULDER,
+	&"l": JOY_BUTTON_LEFT_SHOULDER, &"r": JOY_BUTTON_RIGHT_SHOULDER,
 }
 
 # Player slot -> the Godot joypad device id currently bound to it (-1 = none).

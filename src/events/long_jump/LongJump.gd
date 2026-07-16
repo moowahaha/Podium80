@@ -1,6 +1,6 @@
 extends EventBase
 ## Event 2 — Long Jump.
-## Alternate A/B to build run-up speed, then press LB to take off. Distance depends only on run-up
+## Alternate A/B to build run-up speed, then press L to take off. Distance depends only on run-up
 ## speed and take-off timing: leaving the ground right at the board maximises the measured jump;
 ## taking off early wastes distance (it's measured from the board); crossing the board is a FOUL.
 ## Three attempts, best counts.
@@ -96,7 +96,7 @@ func _begin_attempt() -> void:
 	measured = 0.0
 	state = St.APPROACH
 	_update_info()
-	set_prompt("ALTERNATE  A / B  TO RUN     LB  TO JUMP AT THE BOARD")
+	set_prompt("ALTERNATE  A / B  TO RUN     L  TO JUMP AT THE BOARD")
 
 func _update_info() -> void:
 	var cur: int = turn_order[turn_idx]
@@ -125,7 +125,7 @@ func _approach(delta: float) -> void:
 	var x := RUNUP_X + engine.distance * PX_PER_M
 	ath.position.x = x
 
-	if Input.is_action_just_pressed(Platform.act(pi, &"lb")):
+	if Input.is_action_just_pressed(Platform.act(pi, &"l")):
 		if x <= BOARD_X:
 			_take_off(x)
 		else:
