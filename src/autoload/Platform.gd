@@ -30,6 +30,8 @@ const JOY := {
 
 # Player slot -> the Godot joypad device id currently bound to it (-1 = none).
 var _pad_slot := [-1, -1]
+# Device the boot "PLAYER 1 — PRESS START" claim chose for Player 1 (-1 = unclaimed → connection order).
+var _claimed_p1_device := -1
 
 func _ready() -> void:
 	Input.joy_connection_changed.connect(_on_joy_connection)
@@ -91,10 +93,24 @@ func _ensure_event(action: StringName, ev: InputEvent) -> void:
 func _on_joy_connection(_device: int, _connected: bool) -> void:
 	_assign_pads()
 
+## Designate a specific gamepad as Player 1 (from the boot "PRESS START" claim). Player 2 becomes the
+## next other connected pad. Pass -1 to clear (fall back to connection order).
+func claim_player1(device: int) -> void:
+	_claimed_p1_device = device
+	_assign_pads()
+
 func _assign_pads() -> void:
 	var pads := Input.get_connected_joypads()   # connected device ids, ascending (~ connection order)
+	# If a pad claimed Player 1 (boot "press START"), it takes slot 0 and the rest follow in order;
+	# otherwise fall back to plain connection order.
+	var ordered: Array = pads
+	if _claimed_p1_device >= 0 and pads.has(_claimed_p1_device):
+		ordered = [_claimed_p1_device]
+		for d in pads:
+			if d != _claimed_p1_device:
+				ordered.append(d)
 	for slot in 2:
-		var dev: int = pads[slot] if slot < pads.size() else -1
+		var dev: int = ordered[slot] if slot < ordered.size() else -1
 		if dev != _pad_slot[slot]:
 			_pad_slot[slot] = dev
 			_bind_joy(slot, dev)
