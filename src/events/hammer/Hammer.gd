@@ -1,6 +1,8 @@
 extends EventBase
 ## Event 4 — Hammer Throw (top-down).
-## Alternate A/B to build spin speed; press L to release. The thrower (top-down hold sprite) spins in
+## Alternate A/B to rev up — keep the meter's marker in the green sweet-spot, which sinks ever faster so
+## it demands steadily quicker tapping; press L to release. Throw distance = spin built × release
+## closeness to the sector centre. The thrower (top-down hold sprite) spins in
 ## the circle with the hammer sweeping on its chain; release while the hammer is in the forward SECTOR
 ## for a legal throw (centre = best distance). The camera holds close on the thrower during the
 ## wind-up, then pulls back and FOLLOWS the hammer down the sector. Three attempts, best counts. The
@@ -14,7 +16,27 @@ const CIRCLE := Vector2(113.0, 286.0)      # throwing-circle centre (matches the
 const ARC0 := 56.0                          # px from the circle to the 0 m reference (aligns the art's arcs)
 const PX_PER_M := 9.75
 const FIELD_SECTOR := 0.20                   # legal landing sector half-angle (inside the art's lines)
-const SECTOR_HALF := 0.62                    # legal release arc around forward
+const SECTOR_HALF := 0.76                    # legal release arc around forward (wide sweet spot — forgiving)
+const ROT_SLOW := 1.5                         # thrower sweep (rad/s) at zero spin — slow, easy to time a release
+const ROT_FAST := 9.2                         # thrower sweep (rad/s) at full spin — fast, so a good launch is HARD (but not impossible)
+# Rev-up meter. Alternate A/B to lift the marker; it sinks on its own, and sinks FASTER the higher it
+# sits — so the green sweet-spot demands quicker tapping the further up it goes. The sweet-spot's BOTTOM
+# edge rises as spin builds (difficulty tracks PROGRESS, not the clock — idling never ramps it), so it
+# gets progressively harder to hold up high. Its TOP edge rises too but meets the bar's ceiling (1.0)
+# well before full spin — so once the sweet-spot has reached the top there's nothing above it to
+# overshoot into, and hammering the buttons up there no longer stalls you. Mid-bar, overshooting ABOVE
+# the band is still possible (hold it in the band, don't just mash) but is NOT punished — ease off to
+# sink back in. Only falling out the BOTTOM (too slow) bleeds speed, and gently.
+const REV_KICK := 0.13                        # marker rise per valid alternation
+const REV_SINK_BASE := 0.28                   # marker sink/sec at the bottom of the bar (sets the easy starting pace)
+const REV_SINK_SLOPE := 0.62                  # extra sink/sec at the top of the bar (why higher = faster tapping)
+const BAND_BOTTOM_LO := 0.08                  # sweet-spot bottom edge at zero spin (low → easy to reach)
+const BAND_BOTTOM_HI := 0.80                  # sweet-spot bottom edge at full spin (high → needs fast tapping)
+const BAND_TOP_LO := 0.48                     # sweet-spot top edge at zero spin
+const BAND_TOP_HI := 1.15                     # sweet-spot top edge slope (clamped to 1.0 — reaches the ceiling by ~78% spin)
+const SPIN_GAIN := 0.42                       # spin built per sec while the marker is in the band
+const SPIN_DROP := 0.16                       # spin lost per sec when the marker falls below the band (gentle)
+const SPIN_TOP_TAPER := 0.65                  # how much the spin gain slows as it nears the top (progressively harder)
 const ATTEMPTS := 3
 const ARC_MARKS := [20, 30, 40, 50, 60]      # distances of the art's arcs, for labelling
 const GAUGE_C := Vector2(118.0, 430.0)       # release gauge (screen space)
@@ -29,7 +51,6 @@ const CHAIN := 48.0                           # hammer-head distance while spinn
 var _field: Texture2D
 var _hold_tex: Texture2D
 var cam: Camera2D
-var engine := RunEngine.new()
 var ai_values: Dictionary = {}
 var players: Array = []
 var best: Dictionary = {}
@@ -42,6 +63,9 @@ var state: St = St.WINDUP
 var target := 0.0
 var angle := 0.0
 var release_angle := 0.0
+var rev := 0.0              # rev-meter marker, 0..1 (slightly over 1 = overshoot)
+var spin := 0.0            # actual spin 0..1 → drives rotation speed AND throw distance (and the band height)
+var _last_tap := 0         # last button used (1=A, 2=B) — only alternations lift the marker
 var _info: Label
 
 # flight
@@ -59,9 +83,10 @@ func _music_key() -> StringName:
 
 func _event_ready() -> void:
 	ai_values = Game.roll_ai_values()
-	# Scale the AI (and the whole event) down to fit the top-down field's distance arcs.
+	# Scale the AI (and the whole event) down to fit the top-down field's distance arcs. 0.80 puts the
+	# field's best throws in the low-60s m, so a near-perfect human throw is needed to win.
 	for aid in ai_values:
-		ai_values[aid] = float(ai_values[aid]) * 0.72
+		ai_values[aid] = float(ai_values[aid]) * 0.80
 	for v in ai_values.values():
 		target = maxf(target, float(v))
 	players = humans()
@@ -97,17 +122,18 @@ func _begin_attempt() -> void:
 	var cur: int = turn_order[turn_idx]
 	cur_id = players[cur]
 	player_attempt[cur] = int(player_attempt[cur]) + 1
-	engine.reset()
-	engine.start()
 	AudioBus.loop_crowd(false)             # silent during the wind-up
 	angle = 0.0
+	rev = 0.0
+	spin = 0.0
+	_last_tap = 0
 	state = St.WINDUP
 	cam.position = CAM_WINDUP_POS
 	cam.zoom = Vector2(CAM_WINDUP_ZOOM, CAM_WINDUP_ZOOM)
 	var hp := "res://assets/sprites/%s/hammer-hold.png" % String(cur_id).to_lower()
 	_hold_tex = load(hp) if ResourceLoader.exists(hp) else null
 	_update_info()
-	set_prompt("A / B  SPIN     L  RELEASE IN THE SECTOR")
+	set_prompt("A / B  REV UP — KEEP THE MARKER GREEN      L  RELEASE IN THE SECTOR")
 
 func _update_info() -> void:
 	var cur: int = turn_order[turn_idx]
@@ -139,19 +165,47 @@ func _clamp_cam(pos: Vector2, zoom: float) -> Vector2:
 	var hy := (Palette.BASE_HEIGHT / zoom) * 0.5
 	return Vector2(clampf(pos.x, hx, Palette.BASE_WIDTH - hx), clampf(pos.y, hy, Palette.BASE_HEIGHT - hy))
 
+## The green sweet-spot [lo, hi] on the 0..1 bar. Both edges rise as spin builds, but the TOP edge
+## clamps at the bar max (1.0) and reaches it well before full spin — so near the top there's no
+## overshoot region left. Difficulty tracks the player's own progress rather than elapsed time.
+func band_range() -> Vector2:
+	var s := clampf(spin, 0.0, 1.0)
+	var bottom := lerpf(BAND_BOTTOM_LO, BAND_BOTTOM_HI, s)
+	var top := minf(1.0, lerpf(BAND_TOP_LO, BAND_TOP_HI, s))
+	return Vector2(bottom, top)
+
 func _windup(delta: float) -> void:
 	var pi := Game.player_index_of(cur_id)
+	# The marker sinks faster the higher it sits, so holding it up the bar needs quicker tapping.
+	var sink := REV_SINK_BASE + REV_SINK_SLOPE * rev
+	rev = maxf(0.0, rev - sink * delta)
+	# Alternate A/B to lift the marker; the same button twice does nothing (must alternate).
+	var which := 0
 	if Input.is_action_just_pressed(Platform.act(pi, &"a")):
-		engine.tap_a()
-	if Input.is_action_just_pressed(Platform.act(pi, &"b")):
-		engine.tap_b()
-	engine.update(delta)
-	var spin := engine.speed_ratio()
-	angle = fposmod(angle + (2.2 + spin * 9.0) * 0.81 * delta, TAU)   # spin rotation ~19% slower (more time to release)
+		which = 1
+	elif Input.is_action_just_pressed(Platform.act(pi, &"b")):
+		which = 2
+	if which != 0:
+		if which != _last_tap:
+			rev = minf(1.0, rev + REV_KICK)      # ceiling is the bar maximum
+		_last_tap = which
+	# Spin builds only while the marker is IN the (rising, narrowing) sweet-spot. Overshooting above
+	# it neither gains nor costs — ease off to let it sink back in. Only falling out the BOTTOM (too
+	# slow) bleeds speed, and gently. Topping-off slows near the max, so the last of it is the hardest.
+	var band := band_range()
+	if rev >= band.x and rev <= band.y:
+		var gain := SPIN_GAIN * (1.0 - SPIN_TOP_TAPER * clampf(spin, 0.0, 1.0))
+		spin = minf(1.0, spin + gain * delta)
+	elif rev < band.x:
+		spin = maxf(0.0, spin - SPIN_DROP * delta)
+	# The thrower sweeps faster the more spin you've built — so a legal, well-centred launch gets
+	# harder the faster you go (speed vs. accuracy risk/reward), but the window stays catchable.
+	var rot := lerpf(ROT_SLOW, ROT_FAST, clampf(spin, 0.0, 1.0))
+	angle = fposmod(angle + rot * delta, TAU)
 	if Input.is_action_just_pressed(Platform.act(pi, &"l")):
 		_release(spin)
 
-func _release(spin: float) -> void:
+func _release(spin_speed: float) -> void:
 	release_angle = angle
 	var off := angle
 	if off > PI:
@@ -159,8 +213,10 @@ func _release(spin: float) -> void:
 	if absf(off) > SECTOR_HALF:
 		_foul("OUT OF SECTOR")
 		return
-	var accuracy := 1.0 - absf(off) / SECTOR_HALF * 0.35
-	throw_dist = (14.0 + spin * 50.0) * accuracy      # ~14..64 m — sits inside the field's arcs
+	# Distance is a product of two things: spin speed built up, and how close to the sweet-spot centre
+	# the release was (dead-centre = full credit, sector edge = ~55%).
+	var accuracy := 1.0 - absf(off) / SECTOR_HALF * 0.45
+	throw_dist = (14.0 + spin_speed * 50.0) * accuracy      # ~14..64 m — sits inside the field's arcs
 	var land_ang := clampf(off * 0.6, -FIELD_SECTOR * 0.9, FIELD_SECTOR * 0.9)   # always inside the lines
 	throw_dir = Vector2(cos(land_ang), sin(land_ang))
 	land_pos = CIRCLE + throw_dir * radius_of(throw_dist)
@@ -259,8 +315,29 @@ class GaugeNode extends Node2D:
 			return
 		var c: Vector2 = ev.GAUGE_C
 		var r: float = ev.GAUGE_R
+		# --- Release dial: the spin marker sweeps the ring; press L while it is in the green front
+		# sector. Closer to the sector centre = more distance. ---
 		draw_arc(c, r, 0, TAU, 36, Palette.PANEL_LIGHT, 5.0)
-		draw_arc(c, r, -ev.SECTOR_HALF, ev.SECTOR_HALF, 16, Palette.GOOD, 7.5)
+		draw_arc(c, r, -ev.SECTOR_HALF, ev.SECTOR_HALF, 20, Palette.GOOD, 7.5)
 		var head: Vector2 = c + Vector2(cos(ev.angle), sin(ev.angle)) * r
 		draw_line(c, head, Palette.HIGHLIGHT, 2.5)
 		draw_circle(head, 6.0, Palette.HIGHLIGHT)
+
+		# --- Rev bar: alternate A/B to lift the marker into the green sweet-spot and hold it there.
+		# The band drifts UP and narrows as spin builds and the marker sinks faster up high, so you tap
+		# steadily faster to chase it. Spin only climbs while the marker is green. ---
+		var bx: float = c.x + r + 40.0
+		var btop: float = c.y - r
+		var bh: float = r * 2.0
+		var bw: float = 20.0
+		var left: float = bx - bw * 0.5
+		draw_rect(Rect2(left, btop, bw, bh), Palette.INK)
+		var band: Vector2 = ev.band_range()
+		var y_hi: float = btop + (1.0 - clampf(band.y, 0.0, 1.0)) * bh
+		var y_lo: float = btop + (1.0 - clampf(band.x, 0.0, 1.0)) * bh
+		draw_rect(Rect2(left, y_hi, bw, y_lo - y_hi), Color(Palette.GOOD, 0.45))
+		draw_rect(Rect2(left, btop, bw, bh), Palette.PANEL_LIGHT, false, 2.0)
+		var in_band: bool = ev.rev >= band.x and ev.rev <= band.y
+		var my: float = btop + (1.0 - clampf(ev.rev, 0.0, 1.0)) * bh
+		var mcol: Color = Palette.GOOD if in_band else Palette.BAD
+		draw_rect(Rect2(left - 4.0, my - 2.5, bw + 8.0, 5.0), mcol)
