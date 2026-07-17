@@ -21,7 +21,7 @@ const EVENTS: Array[Dictionary] = [
 	{
 		"id": &"long_jump", "title": "LONG JUMP", "unit": "m", "higher_better": true,
 		"two_player": false, "scene": "res://src/events/long_jump/LongJump.tscn",
-		"ai": {"mean": 6.9, "sd": 0.7, "min": 3.8, "max": 8.6},
+		"ai": {"mean": 7.6, "sd": 0.6, "min": 5.0, "max": 8.6},
 	},
 	{
 		"id": &"hurdles", "title": "110M HURDLES", "unit": "s", "higher_better": false,
