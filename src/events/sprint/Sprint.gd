@@ -96,6 +96,7 @@ func _event_ready() -> void:
 	add_child(cam)
 	cam.setup(world_w, 350.0)
 	cam.set_targets(runners.map(func(r): return r["node"]))
+	cam.set_priority(runners.filter(func(r): return r["human"]).map(func(r): return r["node"]))
 	cam.make_current()
 
 	_clock = UI.label("0.00", 25, Palette.PAPER)

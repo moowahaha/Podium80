@@ -6,6 +6,7 @@ class_name CameraManager
 ## to the world bounds.
 
 var targets: Array[Node2D] = []
+var priority: Array[Node2D] = []   # must stay framed (the human runners) even if the field spreads wider
 var world_width := 720.0
 var fixed_y := 120.0
 var margin := 300.0            # world px of breathing room around the outermost targets
@@ -24,6 +25,14 @@ func set_targets(t: Array) -> void:
 	for n in t:
 		if n != null:
 			targets.append(n)
+
+## Targets that must never leave the frame (the human runners). The camera nudges off the field's
+## geometric centre as needed to keep these on-screen, so a player can't run off camera.
+func set_priority(t: Array) -> void:
+	priority.clear()
+	for n in t:
+		if n != null:
+			priority.append(n)
 
 func _process(delta: float) -> void:
 	if targets.is_empty():
@@ -47,6 +56,19 @@ func _process(delta: float) -> void:
 	zoom = Vector2(z, z)
 
 	var half := _half_view()
+	# Keep the priority (human) targets inside the frame even when the field has spread wider than
+	# the zoom-out can cover — otherwise a trailing/leading player runs clean off camera in the 400m.
+	if not priority.is_empty():
+		var pmin := INF
+		var pmax := -INF
+		for a in priority:
+			pmin = minf(pmin, a.position.x)
+			pmax = maxf(pmax, a.position.x)
+		var pad := minf(half * 0.4, 110.0)          # keep them off the very edge
+		var lo := pmax - half + pad                 # centre must be >= this so the rearmost stays in view
+		var hi := pmin + half - pad                 # centre must be <= this so the foremost stays in view
+		center_x = clampf(center_x, lo, hi) if lo <= hi else (pmin + pmax) * 0.5
+
 	var tx := clampf(center_x, half, maxf(half, world_width - half))
 	var nx := lerpf(position.x, tx, clampf(delta * follow_lerp, 0.0, 1.0))
 	position = Vector2(nx, fixed_y)
