@@ -5,13 +5,24 @@ extends BaseScreen
 
 const PLAYER_SELECT := "res://src/menus/PlayerSelect.tscn"
 const MODE_SELECT := "res://src/menus/ModeSelect.tscn"
-const BG := "res://assets/backgrounds/podium.png"
 
-# Feet positions on each block's top surface (place 0/1/2 = gold/silver/bronze), read off the art.
-const SLOTS := [Vector2(453, 370), Vector2(305, 398), Vector2(602, 406)]
+# One backdrop is chosen at random each ceremony. `slots` = feet positions on each block's top surface
+# (place 0/1/2 = gold/silver/bronze), read off each art. The three new podiums share the same block art.
+const PODIUMS := [
+	{"bg": "res://assets/backgrounds/podium.png",  "slots": [Vector2(453, 370), Vector2(305, 398), Vector2(602, 406)]},
+	{"bg": "res://assets/backgrounds/podium2.jpg", "slots": [Vector2(435, 377), Vector2(350, 400), Vector2(560, 400)]},
+	{"bg": "res://assets/backgrounds/podium3.jpg", "slots": [Vector2(465, 390), Vector2(350, 410), Vector2(580, 410)]},
+	{"bg": "res://assets/backgrounds/podium4.jpg", "slots": [Vector2(435, 390), Vector2(358, 405), Vector2(560, 405)]},
+	{"bg": "res://assets/backgrounds/podium5.jpg", "slots": [Vector2(480, 390), Vector2(390, 405), Vector2(575, 405)]},
+]
+var _slots: Array = PODIUMS[0]["slots"]
 
 func _music_key() -> StringName:
-	return &"menu"
+	return &""          # no default track — the winner's national anthem is started in _screen_ready
+
+## assets/music/anthem_<country>.mp3, looped through the ceremony.
+func _anthem_key(id: StringName) -> StringName:
+	return StringName("anthem_" + String(id).to_lower())
 
 var _t := 0.0
 var _busy := false
@@ -21,13 +32,28 @@ var _flagpoles: Array = []       # {flag, x, base, cap, lo, hi, delay}
 var _fw: Array = []              # firework particles {pos, vel, life, life0, col, size}
 var _fw_timer := 0.0
 
+const SLOT_JSON := "res://assets/backgrounds/podium_slots.json"
+
 func _screen_ready() -> void:
 	bg_scrim = 0.0
-	if ResourceLoader.exists(BG):
-		_bg = load(BG)
+	var pick: Dictionary = PODIUMS[randi() % PODIUMS.size()]
+	_slots = pick["slots"]
+	# Slots authored in the PodiumSlotTool (keyed by backdrop filename) override the hardcoded defaults.
+	if FileAccess.file_exists(SLOT_JSON):
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string(SLOT_JSON))
+		var key := String(pick["bg"]).get_file()
+		if parsed is Dictionary and parsed.has(key):
+			var arr: Array = parsed[key]
+			_slots = [Vector2(arr[0][0], arr[0][1]), Vector2(arr[1][0], arr[1][1]), Vector2(arr[2][0], arr[2][1])]
+	if ResourceLoader.exists(pick["bg"]):
+		_bg = load(pick["bg"])
 
 	# Single event -> that event's ranking; championship -> overall standings.
 	_rows = Game.last_result() if Game.single_event_mode else Game.standings_sorted()
+
+	# The winner's national anthem loops through the ceremony (stopped when it's exited).
+	if not _rows.is_empty():
+		AudioBus.play_music(_anthem_key(_rows[0]["country"]), -7.0)
 
 	var title_txt := (String(Game.current_event()["title"]) + "  —  PODIUM") if Game.single_event_mode else "CHAMPIONS OF THE 1980 GAMES"
 	var head := UI.center_label(title_txt, 28, Palette.HIGHLIGHT)
@@ -37,7 +63,7 @@ func _screen_ready() -> void:
 
 	for place in mini(3, _rows.size()):
 		var id: StringName = _rows[place]["country"]
-		var foot: Vector2 = SLOTS[place]
+		var foot: Vector2 = _slots[place]
 
 		var ath := Athlete.new()
 		ath.set_country(id)
@@ -66,8 +92,7 @@ func _screen_ready() -> void:
 	prompt.size = Vector2(Palette.BASE_WIDTH, 25)
 	prompt.z_index = 6
 	add_child(prompt)
-
-	AudioBus.play(&"fanfare")
+	# (no fanfare sting — the winner's national anthem, started above, carries the ceremony)
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -79,6 +104,7 @@ func _process(delta: float) -> void:
 
 	if not _busy and Input.is_action_just_pressed(Platform.act(0, &"a")):
 		_busy = true
+		AudioBus.stop_music()               # anthem ends when the ceremony is exited
 		AudioBus.play(&"select")
 		if Game.single_event_mode:
 			SceneRouter.goto_scene(MODE_SELECT)
