@@ -43,7 +43,7 @@ func _build_hud() -> void:
 	hud.add_child(_title)
 
 	if not Game.single_event_mode:
-		_counter = UI.label("EVENT %d/%d" % [Game.current_event_index + 1, Game.event_count()], 18, Palette.PAPER)
+		_counter = UI.label("EVENT %d/%d" % [Game.event_number(), Game.event_count()], 18, Palette.PAPER)
 		_counter.position = Vector2(15, 40)
 		hud.add_child(_counter)
 

@@ -22,7 +22,7 @@ func _screen_ready() -> void:
 		_bg = load(path)
 
 	if not Game.single_event_mode:
-		var counter := UI.center_label("EVENT %d/%d" % [Game.current_event_index + 1, Game.event_count()], 24, Palette.PAPER)
+		var counter := UI.center_label("EVENT %d/%d" % [Game.event_number(), Game.event_count()], 24, Palette.PAPER)
 		counter.position = Vector2(0, 120)
 		counter.size = Vector2(Palette.BASE_WIDTH, 30)
 		add_child(counter)

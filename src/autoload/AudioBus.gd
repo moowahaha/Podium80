@@ -157,22 +157,27 @@ func _make_cheer() -> AudioStreamWAV:
 	return _wav(data)
 
 func _make_crowd() -> AudioStreamWAV:
-	# A layered stadium murmur: a deep rumble + a mid chatter, modulated by slow swells (crowd waves).
-	# Swell frequencies complete whole cycles over `dur` so the loop point is seamless.
-	var dur := 3.0
+	# A warm stadium murmur: a deep multi-pole rumble (the body of the crowd) with only a quiet, soft
+	# chatter layered on top — the old version leaned on bright noise, which just read as hiss. Slow
+	# overlapping swells give the "wave"; their frequencies complete whole cycles over `dur` (seamless).
+	var dur := 4.0
 	var n := int(MIX_RATE * dur)
 	var data := PackedByteArray()
 	data.resize(n * 2)
-	var lp1 := 0.0     # deep rumble
-	var lp2 := 0.0     # mid chatter
+	var a1 := 0.0
+	var a2 := 0.0
+	var a3 := 0.0     # cascaded low-pass -> deep, warm rumble
+	var b1 := 0.0     # gentle low-pass -> murmur body (kept quiet, so no hiss)
 	for i in n:
 		var t := float(i) / MIX_RATE
-		var raw := randf() * 2.0 - 1.0
-		lp1 = lerpf(lp1, raw, 0.05)
-		lp2 = lerpf(lp2, raw, 0.30)
-		var swell := 0.72 + 0.28 * sin(TAU * (1.0 / dur) * t) + 0.14 * sin(TAU * (3.0 / dur) * t)
-		var s := (lp1 * 0.75 + lp2 * 0.5) * swell
-		_put_sample(data, i, clampf(s * 0.75, -1.0, 1.0))
+		var white := randf() * 2.0 - 1.0
+		a1 = lerpf(a1, white, 0.06)
+		a2 = lerpf(a2, a1, 0.06)
+		a3 = lerpf(a3, a2, 0.06)
+		b1 = lerpf(b1, white, 0.16)
+		var swell := 0.60 + 0.22 * sin(TAU * (1.0 / dur) * t) + 0.13 * sin(TAU * (2.0 / dur) * t) + 0.08 * sin(TAU * (5.0 / dur) * t)
+		var s := (a3 * 6.2 + b1 * 0.30) * swell
+		_put_sample(data, i, clampf(s, -1.0, 1.0))
 	var w := _wav(data)
 	w.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	w.loop_begin = 0

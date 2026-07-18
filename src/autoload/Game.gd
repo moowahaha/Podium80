@@ -39,6 +39,11 @@ const EVENTS: Array[Dictionary] = [
 		"ai": {"mean": 15.2, "sd": 1.3, "min": 10.5, "max": 18.2},
 	},
 	{
+		"id": &"javelin", "title": "JAVELIN", "unit": "m", "higher_better": true,
+		"two_player": false, "scene": "res://src/events/javelin/Javelin.tscn",
+		"ai": {"mean": 84.0, "sd": 3.8, "min": 74.0, "max": 93.0},   # tight, high field (real finals cluster ~82-92 m)
+	},
+	{
 		"id": &"sprint_400", "title": "400M", "unit": "s", "higher_better": false, "dist": 400.0,
 		"two_player": true, "scene": "res://src/events/sprint/Sprint.tscn",
 		"ai": {"mean": 46.0, "sd": 2.8, "min": 42.0, "max": 55.0},
@@ -50,7 +55,9 @@ var participants: Array[StringName] = []          # all four nations, fixed orde
 var human_map: Dictionary = {}                    # country_id -> player_index (0/1); AI nations absent
 var two_player: bool = false
 var athlete_names: Dictionary = {}                # country_id -> String
-var current_event_index: int = 0
+var current_event_index: int = 0     # the actual EVENTS index in play (= event_order[event_pos])
+var event_order: Array = []           # EVENTS indices in play order (randomised for a championship)
+var event_pos: int = 0                # position within event_order
 var event_results: Array[Dictionary] = []         # [{ event:StringName, ranked:Array }]
 
 # Menu selection carried from ModeSelect -> CountrySelect.
@@ -73,16 +80,47 @@ func start_championship(human_country_ids: Array) -> void:
 	athlete_names.clear()
 	for id in participants:
 		athlete_names[id] = AthleteData.pick_name(id, rng)
-	current_event_index = 0
+	# Championship runs least-complex → most-complex, and always finishes with the 400m.
+	event_order = _championship_order()
+	event_pos = 0
+	current_event_index = event_order[0]
 	event_results.clear()
 	single_event_mode = false
 	championship_started.emit()
+
+## Play order by rising mechanical complexity, 400m always last. Unlisted events fall in before the 400m.
+const COMPLEXITY_ORDER: Array[StringName] = [
+	&"sprint",       # mash A/B
+	&"long_jump",    # run + one take-off
+	&"hurdles",      # run + time each hurdle
+	&"triple_jump",  # run + take-off, then hop & step
+	&"javelin",      # run, plant, then a trajectory meter
+	&"hammer",       # rhythmic rev-up meter + release sector
+	&"sprint_400",   # always last
+]
+
+func _championship_order() -> Array:
+	var order: Array = []
+	for want in COMPLEXITY_ORDER:
+		for i in EVENTS.size():
+			if EVENTS[i]["id"] == want:
+				order.append(i)
+	# Safety: append any event not covered by the list (before the 400m if present).
+	for i in EVENTS.size():
+		if not order.has(i):
+			var insert_at := order.size()
+			if order.size() > 0 and EVENTS[order[-1]]["id"] == &"sprint_400":
+				insert_at -= 1
+			order.insert(insert_at, i)
+	return order
 
 ## Play a single event (chosen from the menu), then return to the menu instead of the podium.
 func start_single_event(event_index: int, human_country_ids: Array) -> void:
 	start_championship(human_country_ids)
 	single_event_mode = true
-	current_event_index = clampi(event_index, 0, EVENTS.size() - 1)
+	event_order = [clampi(event_index, 0, EVENTS.size() - 1)]
+	event_pos = 0
+	current_event_index = event_order[0]
 
 func reset() -> void:
 	participants.clear()
@@ -90,6 +128,8 @@ func reset() -> void:
 	athlete_names.clear()
 	event_results.clear()
 	current_event_index = 0
+	event_order = []
+	event_pos = 0
 	two_player = false
 
 # --- Event access -------------------------------------------------------------
@@ -98,16 +138,22 @@ func current_event() -> Dictionary:
 	return EVENTS[clampi(current_event_index, 0, EVENTS.size() - 1)]
 
 func event_count() -> int:
-	return EVENTS.size()
+	return event_order.size() if not event_order.is_empty() else EVENTS.size()
+
+## 1-based position of the current event within the championship (for the "EVENT n/N" counter).
+func event_number() -> int:
+	return event_pos + 1
 
 func is_last_event() -> bool:
-	return current_event_index >= EVENTS.size() - 1
+	return event_pos >= event_count() - 1
 
 func is_championship_over() -> bool:
 	return event_results.size() >= EVENTS.size()
 
 func advance_event() -> void:
-	current_event_index = mini(current_event_index + 1, EVENTS.size() - 1)
+	event_pos = mini(event_pos + 1, event_count() - 1)
+	if not event_order.is_empty():
+		current_event_index = event_order[event_pos]
 
 # --- Human / player helpers ---------------------------------------------------
 

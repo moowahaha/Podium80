@@ -42,7 +42,7 @@ func _screen_ready() -> void:
 		y += 55.0
 
 	var ev := Game.current_event()
-	var nxt := UI.center_label("NEXT — EVENT %d/%d:  %s" % [Game.current_event_index + 1, Game.event_count(), ev["title"]], 22, Palette.PAPER)
+	var nxt := UI.center_label("NEXT — EVENT %d/%d:  %s" % [Game.event_number(), Game.event_count(), ev["title"]], 22, Palette.PAPER)
 	nxt.position = Vector2(0, 375)
 	nxt.size = Vector2(Palette.BASE_WIDTH, 30)
 	add_child(nxt)
