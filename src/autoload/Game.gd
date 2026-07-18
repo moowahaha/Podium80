@@ -41,7 +41,7 @@ const EVENTS: Array[Dictionary] = [
 	{
 		"id": &"javelin", "title": "JAVELIN", "unit": "m", "higher_better": true,
 		"two_player": false, "scene": "res://src/events/javelin/Javelin.tscn",
-		"ai": {"mean": 84.0, "sd": 3.8, "min": 74.0, "max": 93.0},   # tight, high field (real finals cluster ~82-92 m)
+		"ai": {"mean": 80.7, "sd": 3.66, "min": 71.1, "max": 89.3},   # tight, high field (~4% easier than a real final)
 	},
 	{
 		"id": &"sprint_400", "title": "400M", "unit": "s", "higher_better": false, "dist": 400.0,

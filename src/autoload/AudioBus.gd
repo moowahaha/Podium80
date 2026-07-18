@@ -76,20 +76,43 @@ func play(name: StringName, volume_db := 0.0, pitch := 1.0) -> void:
 	p.pitch_scale = pitch
 	p.play()
 
+# Background crowd is trimmed ~3.4 dB (~20% then a further ~15% quieter) below what callers request;
+# a "roar" briefly lifts the loop above that base at big moments (jump/throw landed, race finished).
+const CROWD_TRIM_DB := -3.4
+var _crowd_base_db := -18.0
+var _crowd_tween: Tween
+
 ## Continuous crowd murmur (looping noise). Call with playing=false to stop.
 func loop_crowd(playing := true, volume_db := -18.0) -> void:
 	if playing:
 		if _crowd_player.stream == null:
 			_crowd_player.stream = _make_crowd()
-		_crowd_player.volume_db = volume_db
+		_crowd_base_db = volume_db + CROWD_TRIM_DB
+		if _crowd_tween:
+			_crowd_tween.kill()
+		_crowd_player.volume_db = _crowd_base_db
 		if not _crowd_player.playing:
 			_crowd_player.play()
 	else:
+		if _crowd_tween:
+			_crowd_tween.kill()
 		_crowd_player.stop()
 
+## Briefly swell the ambient crowd loud, then settle back — for a completed jump/throw or a finish.
+func roar_crowd(boost_db := 7.0, hold := 0.4, fall := 1.8) -> void:
+	if not _crowd_player.playing:
+		return
+	if _crowd_tween:
+		_crowd_tween.kill()
+	_crowd_tween = create_tween()
+	_crowd_tween.tween_property(_crowd_player, "volume_db", _crowd_base_db + boost_db, 0.12)
+	_crowd_tween.tween_interval(hold)
+	_crowd_tween.tween_property(_crowd_player, "volume_db", _crowd_base_db, fall)
+
 func swell_crowd(volume_db := -8.0) -> void:
-	## Brief cheer over the ambient bed (e.g. a finish or a big jump).
+	## A cheer sting AND a swell of the ambient crowd (e.g. a finish or a big jump).
 	play(&"cheer", volume_db)
+	roar_crowd()
 
 # --- Sound library ------------------------------------------------------------
 
@@ -164,19 +187,20 @@ func _make_crowd() -> AudioStreamWAV:
 	var n := int(MIX_RATE * dur)
 	var data := PackedByteArray()
 	data.resize(n * 2)
-	var a1 := 0.0
-	var a2 := 0.0
-	var a3 := 0.0     # cascaded low-pass -> deep, warm rumble
-	var b1 := 0.0     # gentle low-pass -> murmur body (kept quiet, so no hiss)
+	var brown := 0.0     # leaky-integrated (brown) noise -> deep, warm rumble with no highs
+	var dc := 0.0        # tracks slow drift so we can remove sub-audible DC
+	var m1 := 0.0
+	var m2 := 0.0        # dark 2-pole low-pass -> soft low-mid murmur (well below "hiss" range)
 	for i in n:
 		var t := float(i) / MIX_RATE
 		var white := randf() * 2.0 - 1.0
-		a1 = lerpf(a1, white, 0.06)
-		a2 = lerpf(a2, a1, 0.06)
-		a3 = lerpf(a3, a2, 0.06)
-		b1 = lerpf(b1, white, 0.16)
-		var swell := 0.60 + 0.22 * sin(TAU * (1.0 / dur) * t) + 0.13 * sin(TAU * (2.0 / dur) * t) + 0.08 * sin(TAU * (5.0 / dur) * t)
-		var s := (a3 * 6.2 + b1 * 0.30) * swell
+		brown = brown * 0.985 + white * 0.06
+		dc = lerpf(dc, brown, 0.0006)
+		var body := brown - dc          # the crowd's rumble, de-drifted
+		m1 = lerpf(m1, white, 0.05)
+		m2 = lerpf(m2, m1, 0.05)        # much darker than before (no bright layer -> no hiss)
+		var swell := 0.58 + 0.24 * sin(TAU * (1.0 / dur) * t) + 0.14 * sin(TAU * (2.0 / dur) * t) + 0.07 * sin(TAU * (5.0 / dur) * t)
+		var s := (body * 4.6 + m2 * 2.2) * swell
 		_put_sample(data, i, clampf(s, -1.0, 1.0))
 	var w := _wav(data)
 	w.loop_mode = AudioStreamWAV.LOOP_FORWARD

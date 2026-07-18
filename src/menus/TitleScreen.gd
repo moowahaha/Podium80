@@ -51,8 +51,7 @@ func _screen_ready() -> void:
 	sub.size = Vector2(Palette.BASE_WIDTH, tag_size + 12)
 	add_child(sub)
 	_prompt = _band("PRESS  A  TO BEGIN", 25, Palette.HIGHLIGHT, 460, 35)
-
-	AudioBus.loop_crowd(true, -19.0)
+	# (no crowd bed on menus — the stadium ambience belongs to the competitions only)
 
 ## A full-width, centre-aligned text band at a fixed y — reliable pixel-space layout.
 func _band(text: String, size: int, color: Color, y: float, h: float) -> Label:

@@ -263,6 +263,7 @@ func _flight(delta: float) -> void:
 		jav_pos = entry
 		splash.burst(entry, clampf(0.7 + measured * 0.02, 0.7, 1.8))
 		AudioBus.play(&"land")
+		AudioBus.roar_crowd()                  # crowd swells on every completed throw
 		_record(measured, false)
 
 func _foul(reason: String) -> void:
@@ -403,21 +404,29 @@ class JavelinDraw extends Node2D:
 			draw_line(tip - dir * 4.0, tip, Color("d8dde2"), 3.0)         # metal point
 			return
 		if style == &"boomerang":
-			# Two fairly straight wooden arms meeting at a DISTINCT (but rounded) bend, fat in the middle
-			# and tapering to the tips — whirls as it flies.
+			# A solid wooden boomerang: two arms meeting at a distinct bend, fat in the middle tapering
+			# to rounded tips — built as one filled polygon (clean edges, not stamped dots).
 			var wood := Color("9a5a2a")
-			var woodhi := Color("b57a3a")
-			var arm: float = length * 0.52
-			var half := deg_to_rad(60.0)                # 120° between the arms — a clear bend, not a bow
+			var woodhi := Color("c08748")
+			var arm: float = length * 0.38             # ~30% smaller than a full javelin
+			var half := deg_to_rad(58.0)                # ~116° between the arms — a clear bend
 			var d1 := Vector2(cos(ang - half), sin(ang - half))
 			var d2 := Vector2(cos(ang + half), sin(ang + half))
-			var steps := 6
-			for arm_dir in [d1, d2]:
-				for j in range(steps + 1):
-					var u := float(j) / float(steps)
-					draw_circle(pos + arm_dir * (arm * u), lerpf(3.2, 1.3, u), wood)   # thick bend → thin tip
-			draw_circle(pos, 3.8, wood)                 # fat elbow = the distinct bend
-			draw_circle(pos, 1.7, woodhi)               # highlight knot at the bend
+			var t1 := pos + d1 * arm
+			var t2 := pos + d2 * arm
+			var wfat := 3.6                             # half-width at the bend
+			var wtip := 1.3                             # half-width at the tips
+			var n1 := Vector2(-d1.y, d1.x)
+			var n2 := Vector2(-d2.y, d2.x)
+			var outer := (d1 + d2).normalized()         # the fat outer side of the elbow
+			var poly := PackedVector2Array([
+				t1 + n1 * wtip, pos + outer * wfat, t2 - n2 * wtip,   # outer edge tip→elbow→tip
+				t2 + n2 * wtip, pos - outer * (wfat * 0.5), t1 - n1 * wtip,   # inner edge back
+			])
+			draw_colored_polygon(poly, wood)
+			draw_polyline(poly, Color(0.35, 0.2, 0.08), 1.0)   # crisp dark outline
+			draw_line(pos, (t1 + pos) * 0.5, woodhi, 1.2)      # subtle grain highlight on each arm
+			draw_line(pos, (t2 + pos) * 0.5, woodhi, 1.2)
 			return
 		if style == &"branch":
 			# A gnarled tree branch: crooked tapering shaft (fixed kinks = organic but stable) with a

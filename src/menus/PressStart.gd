@@ -25,8 +25,7 @@ func _screen_ready() -> void:
 	_prompt.position = Vector2(0, 380)
 	_prompt.size = Vector2(Palette.BASE_WIDTH, 40)
 	add_child(_prompt)
-
-	AudioBus.loop_crowd(true, -19.0)   # stadium ambience, like the title
+	# (no crowd bed on menus — the stadium ambience belongs to the competitions only)
 
 func _process(delta: float) -> void:
 	_t += delta

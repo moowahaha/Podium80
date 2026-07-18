@@ -38,6 +38,9 @@ func _screen_ready() -> void:
 	bg_scrim = 0.0
 	var pick: Dictionary = PODIUMS[randi() % PODIUMS.size()]
 	_slots = pick["slots"]
+	# Load the backdrop FIRST so nothing below can leave it unset (falling back to the menu bg).
+	if ResourceLoader.exists(pick["bg"]):
+		_bg = load(pick["bg"])
 	# Slots authored in the PodiumSlotTool (keyed by backdrop filename) override the hardcoded defaults.
 	if FileAccess.file_exists(SLOT_JSON):
 		var parsed = JSON.parse_string(FileAccess.get_file_as_string(SLOT_JSON))
@@ -45,8 +48,6 @@ func _screen_ready() -> void:
 		if parsed is Dictionary and parsed.has(key):
 			var arr: Array = parsed[key]
 			_slots = [Vector2(arr[0][0], arr[0][1]), Vector2(arr[1][0], arr[1][1]), Vector2(arr[2][0], arr[2][1])]
-	if ResourceLoader.exists(pick["bg"]):
-		_bg = load(pick["bg"])
 
 	# Single event -> that event's ranking; championship -> overall standings.
 	_rows = Game.last_result() if Game.single_event_mode else Game.standings_sorted()
