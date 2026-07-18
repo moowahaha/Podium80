@@ -7,6 +7,7 @@ var _p: Array = []          # particles: {pos, vel, life, life0, size, col}
 var _bursts := 0            # varies the RNG seed per burst (no time source available)
 
 const SAND_COLS := [Color("efdca4"), Color("e2cd93"), Color("d2b877"), Color("bf9f5f")]
+var cols: Array = SAND_COLS   # override for e.g. dirt/grass debris (javelin landing)
 
 func _ready() -> void:
 	z_index = 60            # over the sand + athlete
@@ -25,7 +26,7 @@ func burst(at: Vector2, power: float = 1.0) -> void:
 			"vel": Vector2(cos(ang), sin(ang)) * spd,
 			"life": life, "life0": life,
 			"size": rng.randf_range(1.5, 4.5),
-			"col": SAND_COLS[rng.randi_range(0, SAND_COLS.size() - 1)],
+			"col": cols[rng.randi_range(0, cols.size() - 1)],
 		})
 	queue_redraw()
 

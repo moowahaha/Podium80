@@ -17,6 +17,7 @@ const APRON_DROP := 360.0       # how far the grassy apron extends below the bas
 const TOP_FADE := 320.0         # height of the sky->black fade above the backdrop (for zoom-out)
 # Runway mode (jump events): a single run strip flanked by grass, instead of the full lane track.
 @export var runway := false
+@export var runway_end_x := 0.0   # if >0, the red run strip stops here and it's grass beyond (javelin landing field)
 const RUNWAY_UP := 32.0        # run strip extends this far above the athlete line...
 const RUNWAY_DOWN := 34.0      # ...and this far below
 
@@ -132,22 +133,24 @@ func _build_runway_texture(rng: RandomNumberGenerator) -> void:
 	var field_bot := float(Palette.BASE_HEIGHT)
 	var rtop := ground_y - RUNWAY_UP
 	var rbot := ground_y + RUNWAY_DOWN
+	var sw: float = runway_end_x if runway_end_x > 0.0 else world_width   # strip ends here; grass beyond
 	var blades := int(world_width * 1.4)
 	for _i in blades:
 		var y := rng.randf_range(field_top + 1.0, field_bot - 2.0)
-		if y > rtop - 2.0 and y < rbot + 2.0:
-			continue                                   # hidden under the run strip
+		var bx := rng.randf_range(0.0, world_width)
+		if bx < sw and y > rtop - 2.0 and y < rbot + 2.0:
+			continue                                   # hidden under the run strip (grass shows beyond sw)
 		var lighter := rng.randf() < 0.6
 		var col := Palette.INFIELD.lightened(rng.randf_range(0.05, 0.30)) if lighter else Palette.INFIELD.darkened(rng.randf_range(0.08, 0.30))
 		col.a = rng.randf_range(0.35, 0.8)
 		var hh := rng.randf_range(2.5, 5.5)
-		_grass.append({"x": rng.randf_range(0.0, world_width), "y": y - hh, "w": rng.randf_range(1.0, 1.8), "h": hh, "col": col})
-	var count := int(world_width * 1.6)
+		_grass.append({"x": bx, "y": y - hh, "w": rng.randf_range(1.0, 1.8), "h": hh, "col": col})
+	var count := int(sw * 1.6)
 	for _i in count:
 		var lighten := rng.randf() < 0.35
 		var col2 := Palette.TRACK.lightened(rng.randf_range(0.08, 0.22)) if lighten else Palette.TRACK.darkened(rng.randf_range(0.14, 0.40))
 		col2.a = rng.randf_range(0.25, 0.55)
-		_track_grain.append({"x": rng.randf_range(0.0, world_width), "y": rng.randf_range(rtop + 2.0, rbot - 2.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.0), "col": col2})
+		_track_grain.append({"x": rng.randf_range(0.0, sw), "y": rng.randf_range(rtop + 2.0, rbot - 2.0), "w": rng.randf_range(1.5, 3.0), "h": rng.randf_range(1.0, 2.0), "col": col2})
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -267,19 +270,21 @@ func _draw_track(w: float) -> void:
 func _draw_runway(w: float) -> void:
 	var rtop := ground_y - RUNWAY_UP
 	var rbot := ground_y + RUNWAY_DOWN
-	# Grass field across the whole ground.
-	draw_rect(Rect2(0, STANDS_BOTTOM, w, float(Palette.BASE_HEIGHT) - STANDS_BOTTOM), Palette.INFIELD.darkened(0.12))
+	var sw: float = runway_end_x if runway_end_x > 0.0 else w   # run strip only runs to here (grass beyond)
+	# Grass field across the whole ground, extended below the viewport so a zoomed-out camera (javelin
+	# flight) never reveals a black strip under the field.
+	draw_rect(Rect2(0, STANDS_BOTTOM, w, float(Palette.BASE_HEIGHT) + APRON_DROP - STANDS_BOTTOM), Palette.INFIELD.darkened(0.12))
 	for b in _grass:
 		draw_rect(Rect2(b["x"], b["y"], b["w"], b["h"]), b["col"])
 	# Shaded seams where the grass meets the strip.
-	draw_rect(Rect2(0, rtop - 1.5, w, 1.5), Palette.INFIELD.darkened(0.45))
-	draw_rect(Rect2(0, rbot, w, 1.5), Palette.INFIELD.darkened(0.45))
+	draw_rect(Rect2(0, rtop - 1.5, sw, 1.5), Palette.INFIELD.darkened(0.45))
+	draw_rect(Rect2(0, rbot, sw, 1.5), Palette.INFIELD.darkened(0.45))
 	# The run strip (red track), dusted with grain, with white edge lines.
-	draw_rect(Rect2(0, rtop, w, rbot - rtop), Palette.TRACK)
+	draw_rect(Rect2(0, rtop, sw, rbot - rtop), Palette.TRACK)
 	for g in _track_grain:
 		draw_rect(Rect2(g["x"], g["y"], g["w"], g["h"]), g["col"])
-	draw_rect(Rect2(0, rtop - 1.25, w, 2.5), Palette.TRACK_LINE)
-	draw_rect(Rect2(0, rbot - 1.25, w, 2.5), Palette.TRACK_LINE)
+	draw_rect(Rect2(0, rtop - 1.25, sw, 2.5), Palette.TRACK_LINE)
+	draw_rect(Rect2(0, rbot - 1.25, sw, 2.5), Palette.TRACK_LINE)
 
 func _draw_pool(w: float) -> void:
 	# Poolside deck, then the water, drawn side-on like the running track band.

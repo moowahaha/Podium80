@@ -7,7 +7,7 @@ class_name Athlete
 ## Replaceable later: swap _draw for an AnimatedSprite2D without touching callers — the public API
 ## (set_country, state, run cycle, facing) is what gameplay uses.
 
-enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE, SWIM, HURDLE }
+enum State { IDLE, READY, RUN, JUMP, LAND, THROW, FALL, STUMBLE, CELEBRATE, SWIM, HURDLE, JAV_STAND, JAV_RUN, JAV_LAUNCH }
 
 # Per-country sprite sheets by state (expand as art arrives). Files live at
 # `assets/sprites/<country>/<file>.png`; frames are laid out left-to-right, top-to-bottom in a
@@ -24,6 +24,8 @@ const SPRITE_STATES := {
 		State.JUMP:   {"file": "jump",     "cols": 3, "rows": 2, "frames": 5, "foot": 2},
 		State.LAND:   {"file": "land",     "cols": 1, "rows": 1, "frames": 1, "foot": 12},
 		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 17, "foot": 1, "pingpong": true},
+		State.JAV_RUN:   {"file": "javelin-run",    "cols": 3, "rows": 3, "frames": 9, "foot": 3},
+		State.JAV_LAUNCH:{"file": "javelin-launch", "cols": 1, "rows": 1, "frames": 1, "foot": 3},
 	},
 	&"AUS": {
 		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 4},
@@ -38,6 +40,10 @@ const SPRITE_STATES := {
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 25, "fit": 1.7, "shift": 27.0},
 		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 16, "foot": 4, "pingpong": true},   # 16: last frame jitters on reverse
+		# Javelin: 3x3 run sheet + a single-frame launch/follow-through pose. The javelin itself is drawn
+		# by the event (mapped to the hand), not baked into these sheets; standing uses the IDLE sprite.
+		State.JAV_RUN:   {"file": "javelin-run",    "cols": 3, "rows": 3, "frames": 9, "foot": 4},
+		State.JAV_LAUNCH:{"file": "javelin-launch", "cols": 1, "rows": 1, "frames": 1, "foot": 4},
 	},
 	&"GBR": {
 		State.IDLE:   {"file": "standing", "cols": 1, "rows": 1, "frames": 1, "foot": 6},
@@ -50,6 +56,8 @@ const SPRITE_STATES := {
 		State.FALL:   {"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 		State.STUMBLE:{"file": "fallen",   "cols": 1, "rows": 1, "frames": 1, "foot": 24, "shift": 30.0},
 		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 17, "foot": 5, "pingpong": true},
+		# GBR runs with its normal run sprite (javelin held underarm), so only a launch pose here.
+		State.JAV_LAUNCH:{"file": "javelin-launch", "cols": 1, "rows": 1, "frames": 1, "foot": 6},
 	},
 	&"GDR": {
 		State.IDLE:   {"file": "stand",    "cols": 1, "rows": 1, "frames": 1, "foot": 5},
@@ -61,6 +69,8 @@ const SPRITE_STATES := {
 		State.FALL:   {"file": "fall",     "cols": 1, "rows": 1, "frames": 1, "foot": 16},   # lying (spills)
 		State.STUMBLE:{"file": "fall",     "cols": 1, "rows": 1, "frames": 1, "foot": 16},
 		State.CELEBRATE:{"file": "dance",  "cols": 5, "rows": 4, "frames": 17, "foot": 4, "pingpong": true},
+		State.JAV_RUN:   {"file": "javelin-run",    "cols": 3, "rows": 3, "frames": 9, "foot": 6},
+		State.JAV_LAUNCH:{"file": "javelin-launch", "cols": 1, "rows": 1, "frames": 1, "foot": 5},
 	},
 }
 
@@ -85,6 +95,15 @@ const DANCE_FPS := 9.0          # podium dance playback speed (ping-pong)
 var run_in_place := false                     # menu: advance the run cycle on time, not distance
 var foot_bias := 0.0                          # extra source-px added to the sprite foot (plant a leap pose)
 var _sheets: Dictionary = {}                  # State -> {tex, cols, rows, frames, fw, fh}
+# A magenta pixel (#FF00FF) placed on the hold-point of a frame marks where an event should anchor a
+# held prop (e.g. the javelin). Scanned once per sheet (cached), the marker is read into a per-frame
+# anchor list and erased from the texture. See has_anchor() / anchor_world().
+static var _sheet_cache: Dictionary = {}      # sprite path -> {"tex": Texture2D, "anchors": Array[Vector2]}
+# Hold-point anchors authored by the JavelinAnchorTool: country -> file -> [[x,y] per frame] (source px).
+# Takes precedence over magenta markers. See tools/JavelinAnchorTool.
+const ANCHOR_JSON := "res://assets/sprites/javelin_anchors.json"
+static var _anchor_data: Dictionary = {}
+static var _anchor_loaded := false
 
 const H := 26.0                               # nominal procedural height in px
 
@@ -115,22 +134,172 @@ func _apply_scale() -> void:
 
 func _load_sheets() -> void:
 	_sheets = {}
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # keep runtime (marker-stripped) textures crisp
+	_ensure_anchor_data()
+	var cl := String(country_id).to_lower()
 	var m: Dictionary = SPRITE_STATES.get(country_id, {})
-	var cdir := SPRITE_DIR + String(country_id).to_lower() + "/"
+	var cdir := SPRITE_DIR + cl + "/"
 	for st in m:
 		var info: Dictionary = m[st]
 		var path := cdir + String(info["file"]) + ".png"
-		if ResourceLoader.exists(path):
-			var tex: Texture2D = load(path)
-			_sheets[st] = {
-				"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
-				"foot": info.get("foot", 0),
-				"shift": info.get("shift", 0.0),       # source-px to nudge the frame forward (facing dir)
-				"stride": info.get("stride", RUN_STRIDE_PX),  # world-px per run frame (tune per sheet vs foot-slip)
-				"pingpong": info.get("pingpong", false),  # play forward then backward (looping dance)
-				"fit": info.get("fit", SPRITE_FIT),   # per-state scale override (e.g. enlarge a compact pose)
-				"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
-			}
+		if not ResourceLoader.exists(path):
+			continue
+		var entry: Dictionary = _sheet_cache.get(path, {})
+		if entry.is_empty():
+			entry = _scan_sheet(load(path), int(info["cols"]), int(info["rows"]), int(info["frames"]))
+			_sheet_cache[path] = entry
+		var tex: Texture2D = entry["tex"]
+		var sheet := {
+			"tex": tex, "cols": info["cols"], "rows": info["rows"], "frames": info["frames"],
+			"foot": info.get("foot", 0),
+			"shift": info.get("shift", 0.0),       # source-px to nudge the frame forward (facing dir)
+			"stride": info.get("stride", RUN_STRIDE_PX),  # world-px per run frame (tune per sheet vs foot-slip)
+			"pingpong": info.get("pingpong", false),  # play forward then backward (looping dance)
+			"fit": info.get("fit", SPRITE_FIT),   # per-state scale override (e.g. enlarge a compact pose)
+			"fw": float(tex.get_width()) / info["cols"], "fh": float(tex.get_height()) / info["rows"],
+		}
+		# Anchors: JSON (authored in the tool) wins; otherwise fall back to magenta markers in the sheet.
+		# Each entry is [x, y] or [x, y, angle_deg] in source px.
+		var jfiles: Dictionary = _anchor_data.get(cl, {})
+		if jfiles.has(info["file"]):
+			sheet["anchors"] = jfiles[info["file"]]
+		elif not (entry["anchors"] as Array).is_empty():
+			sheet["anchors"] = entry["anchors"]
+		_sheets[st] = sheet
+
+## Load the tool-authored hold-point anchors once (JSON: country -> file -> [[x,y] per frame]).
+func _ensure_anchor_data() -> void:
+	if _anchor_loaded:
+		return
+	_anchor_loaded = true
+	if FileAccess.file_exists(ANCHOR_JSON):
+		var parsed = JSON.parse_string(FileAccess.get_file_as_string(ANCHOR_JSON))
+		if parsed is Dictionary:
+			_anchor_data = parsed
+
+## Scan a sheet for the magenta hold-point marker (one pixel per frame). Returns the texture (with the
+## markers erased if any were found) and a per-frame anchor list in source px (unmarked frames = -1,-1).
+func _scan_sheet(tex: Texture2D, cols: int, rows: int, frames: int) -> Dictionary:
+	var img: Image = tex.get_image() if tex != null else null
+	if img == null:
+		return {"tex": tex, "anchors": []}
+	if img.is_compressed():
+		img.decompress()
+	var fw := img.get_width() / cols
+	var fh := img.get_height() / rows
+	var anchors: Array = []
+	anchors.resize(frames)
+	for i in frames:
+		anchors[i] = [-1, -1]
+	var found := false
+	for r in rows:
+		for c in cols:
+			var fi := r * cols + c
+			if fi >= frames:
+				continue
+			var hit := false
+			for yy in range(fh):
+				for xx in range(fw):
+					var px := img.get_pixel(c * fw + xx, r * fh + yy)
+					if px.a > 0.5 and px.r > 0.7 and px.g < 0.3 and px.b > 0.7:
+						anchors[fi] = [xx, yy]
+						img.set_pixel(c * fw + xx, r * fh + yy, Color(0, 0, 0, 0))
+						found = true
+						hit = true
+						break
+				if hit:
+					break
+	if found:
+		return {"tex": ImageTexture.create_from_image(img), "anchors": anchors}
+	return {"tex": tex, "anchors": []}
+
+## Which frame index is currently showing for a sheet (matches _draw_sheet's selection exactly).
+func _frame_index(sh: Dictionary) -> int:
+	var frames := int(sh["frames"])
+	if anim01 >= 0.0:
+		return clampi(int(anim01 * frames), 0, frames - 1)
+	if sh.get("pingpong", false) and frames > 1:
+		var period := 2 * (frames - 1)
+		var tt := int(_phase) % period
+		return tt if tt < frames else period - tt
+	if frames > 1:
+		return int(_phase) % frames
+	return 0
+
+## True if the current sprite frame carries a marked hold-point.
+func has_anchor() -> bool:
+	var sh: Dictionary = _sheets.get(state, {})
+	if not sh.has("anchors"):
+		return false
+	var an: Array = sh["anchors"]
+	var idx := _frame_index(sh)
+	return idx >= 0 and idx < an.size() and float((an[idx] as Array)[0]) >= 0.0
+
+## World position of the current frame's marked hold-point (call only when has_anchor() is true).
+func anchor_world() -> Vector2:
+	var sh: Dictionary = _sheets[state]
+	var a: Array = sh["anchors"][_frame_index(sh)]
+	var fit: float = sh.get("fit", SPRITE_FIT)
+	var dw: float = float(sh["fw"]) * fit
+	var dh: float = float(sh["fh"]) * fit
+	var foot := (float(sh.get("foot", 0)) + foot_bias) * fit
+	var shift := float(sh.get("shift", 0.0)) * fit
+	var lx := -dw / 2.0 + shift + float(a[0]) * fit
+	var ly := -dh + foot + float(a[1]) * fit
+	if facing < 0:
+		lx = -lx
+	return position + Vector2(lx, ly) * scale.x
+
+## Held-javelin angle (radians) authored for the current frame, or NAN if this anchor has no angle.
+func anchor_angle() -> float:
+	var sh: Dictionary = _sheets.get(state, {})
+	if not sh.has("anchors"):
+		return NAN
+	var a: Array = sh["anchors"][_frame_index(sh)]
+	if a.size() >= 3:
+		var deg := float(a[2])
+		return -deg_to_rad(deg) if facing < 0 else deg_to_rad(deg)
+	return NAN
+
+## A small patch of the current frame around the anchor (the hand), for redrawing the hand OVER a prop
+## that is otherwise drawn in front of the body. Returns {tex, src, dest (world)} or {} if no anchor.
+## Assumes facing +1 (the javelin thrower always runs right).
+func hand_blit(half_px: float) -> Dictionary:
+	if not has_anchor():
+		return {}
+	var sh: Dictionary = _sheets[state]
+	var idx := _frame_index(sh)
+	var a: Array = sh["anchors"][idx]
+	var fit: float = sh.get("fit", SPRITE_FIT)
+	var fw: float = sh["fw"]
+	var fh: float = sh["fh"]
+	var cols := int(sh["cols"])
+	var col := idx % cols
+	var row := idx / cols
+	# Only re-blit an EXPLICITLY marked hand region [.., .., .., hx, hy, hw, hh] (from the tool). Without
+	# one we draw nothing, so the implement is simply in front of the body (no body pixels over it).
+	if a.size() < 7:
+		return {}
+	var hx := float(a[3])
+	var hy := float(a[4])
+	var hw := float(a[5])
+	var hh := float(a[6])
+	var x0 := clampf(hx, 0.0, fw)
+	var y0 := clampf(hy, 0.0, fh)
+	var x1 := clampf(hx + hw, 0.0, fw)
+	var y1 := clampf(hy + hh, 0.0, fh)
+	if x1 - x0 < 1.0 or y1 - y0 < 1.0:
+		return {}
+	var src := Rect2(col * fw + x0, row * fh + y0, x1 - x0, y1 - y0)
+	var dw: float = fw * fit
+	var dh: float = fh * fit
+	var foot := (float(sh.get("foot", 0)) + foot_bias) * fit
+	var shift := float(sh.get("shift", 0.0)) * fit
+	var s: float = scale.x
+	var lx := -dw / 2.0 + shift + x0 * fit
+	var ly := -dh + foot + y0 * fit
+	var dest := Rect2(position.x + lx * s, position.y + ly * s, (x1 - x0) * fit * s, (y1 - y0) * fit * s)
+	return {"tex": sh["tex"], "src": src, "dest": dest}
 
 func _process(delta: float) -> void:
 	_anim_t += delta
@@ -138,7 +307,7 @@ func _process(delta: float) -> void:
 		_last_x = position.x
 	var dx := position.x - _last_x
 	_last_x = position.x
-	if state == State.RUN:
+	if state == State.RUN or state == State.JAV_RUN:
 		if run_in_place:
 			# On-the-spot jog (menus): no travel to key off, so advance on time.
 			_phase += delta * RUN_IN_PLACE_FPS
@@ -173,7 +342,7 @@ func _draw() -> void:
 			_draw_fallen(kp, ks, skin, f)
 		State.CELEBRATE:
 			_draw_celebrate(kp, ks, skin, f)
-		State.THROW:
+		State.THROW, State.JAV_LAUNCH:
 			_draw_throw(kp, ks, skin, f)
 		State.SWIM:
 			_draw_swim(kp, ks, skin, f)
@@ -192,16 +361,7 @@ func _draw_sheet(sh: Dictionary) -> void:
 	var dh: float = fh * fit
 	# Shadow sized to the sprite footprint.
 	draw_ellipse_approx(Vector2(0, -1.0), dw * 0.24, dw * 0.07, Palette.SHADOW)
-	var frames := int(sh["frames"])
-	var idx := 0
-	if anim01 >= 0.0:
-		idx = clampi(int(anim01 * frames), 0, frames - 1)   # play once, driven by the event (e.g. jump arc)
-	elif sh.get("pingpong", false) and frames > 1:
-		var period := 2 * (frames - 1)                      # forward then backward (dance)
-		var tt := int(_phase) % period
-		idx = tt if tt < frames else period - tt
-	elif frames > 1:
-		idx = int(_phase) % frames                          # looping cycle (running)
+	var idx := _frame_index(sh)                             # matches has_anchor()/anchor_world()
 	var col := idx % int(sh["cols"])
 	var row := idx / int(sh["cols"])
 	var src := Rect2(col * fw, row * fh, fw, fh)
@@ -221,7 +381,7 @@ func _draw_upright(kp: Color, ks: Color, skin: Color, f: float) -> void:
 	var crouch := 0.0
 	var lean := 0.0
 	match state:
-		State.RUN:
+		State.RUN, State.JAV_RUN:
 			swing = sin(_phase) * 5.0
 			arm = -sin(_phase) * 4.0
 			lean = 3.0 * f
