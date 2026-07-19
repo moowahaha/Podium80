@@ -7,13 +7,15 @@ const PLAYER_SELECT := "res://src/menus/PlayerSelect.tscn"
 const MODE_SELECT := "res://src/menus/ModeSelect.tscn"
 
 # One backdrop is chosen at random each ceremony. `slots` = feet positions on each block's top surface
-# (place 0/1/2 = gold/silver/bronze), read off each art. The three new podiums share the same block art.
+# (place 0/1/2 = gold/silver/bronze), authored in the PodiumSlotTool and baked in here so the ceremony
+# needs no runtime data file (JSON isn't a Godot resource, so it wouldn't ship in the exported .pck).
+# PNG only — the exported .pck's runtime failed to load JPEG-sourced textures on the console.
 const PODIUMS := [
-	{"bg": "res://assets/backgrounds/podium.png",  "slots": [Vector2(453, 370), Vector2(305, 398), Vector2(602, 406)]},
-	{"bg": "res://assets/backgrounds/podium2.jpg", "slots": [Vector2(435, 377), Vector2(350, 400), Vector2(560, 400)]},
-	{"bg": "res://assets/backgrounds/podium3.jpg", "slots": [Vector2(465, 390), Vector2(350, 410), Vector2(580, 410)]},
-	{"bg": "res://assets/backgrounds/podium4.jpg", "slots": [Vector2(435, 390), Vector2(358, 405), Vector2(560, 405)]},
-	{"bg": "res://assets/backgrounds/podium5.jpg", "slots": [Vector2(480, 390), Vector2(390, 405), Vector2(575, 405)]},
+	{"bg": "res://assets/backgrounds/podium.png",  "slots": [Vector2(458, 368), Vector2(312, 399), Vector2(599, 405)]},
+	{"bg": "res://assets/backgrounds/podium2.png", "slots": [Vector2(474, 372), Vector2(370, 403), Vector2(572, 410)]},
+	{"bg": "res://assets/backgrounds/podium3.png", "slots": [Vector2(472, 374), Vector2(371, 403), Vector2(574, 411)]},
+	{"bg": "res://assets/backgrounds/podium4.png", "slots": [Vector2(488, 377), Vector2(386, 408), Vector2(589, 416)]},
+	{"bg": "res://assets/backgrounds/podium5.png", "slots": [Vector2(481, 373), Vector2(357, 418), Vector2(600, 420)]},
 ]
 var _slots: Array = PODIUMS[0]["slots"]
 
@@ -38,10 +40,10 @@ func _screen_ready() -> void:
 	bg_scrim = 0.0
 	var pick: Dictionary = PODIUMS[randi() % PODIUMS.size()]
 	_slots = pick["slots"]
-	# Load the backdrop FIRST so nothing below can leave it unset (falling back to the menu bg).
-	if ResourceLoader.exists(pick["bg"]):
-		_bg = load(pick["bg"])
-	# Slots authored in the PodiumSlotTool (keyed by backdrop filename) override the hardcoded defaults.
+	# Load the backdrop directly (load() returns null on failure — no reliance on ResourceLoader.exists,
+	# which has proven flaky across runtimes). Slots are baked into PODIUMS, so no data file is needed.
+	_bg = load(pick["bg"])
+	# Optional dev override: if the authoring JSON is present (editor/source runs), use its fresh slots.
 	if FileAccess.file_exists(SLOT_JSON):
 		var parsed = JSON.parse_string(FileAccess.get_file_as_string(SLOT_JSON))
 		var key := String(pick["bg"]).get_file()

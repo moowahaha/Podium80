@@ -6,15 +6,15 @@ extends Node2D
 ## The backdrop is drawn at the game's exact 960x540 base, so clicks map 1:1 to in-game coordinates.
 
 const OUT := "res://assets/backgrounds/podium_slots.json"
-const BGS := ["podium.png", "podium2.jpg", "podium3.jpg", "podium4.jpg", "podium5.jpg"]
+const BGS := ["podium.png", "podium2.png", "podium3.png", "podium4.png", "podium5.png"]
 # Seed defaults from the game's current hardcoded slots (gold, silver, bronze) so the ORIGINAL podium
 # stays correct and you only need to re-click the ones that are off.
 const SEED := {
 	"podium.png":  [[453, 370], [305, 398], [602, 406]],
-	"podium2.jpg": [[435, 377], [350, 400], [560, 400]],
-	"podium3.jpg": [[465, 390], [350, 410], [580, 410]],
-	"podium4.jpg": [[435, 390], [358, 405], [560, 405]],
-	"podium5.jpg": [[480, 390], [390, 405], [575, 405]],
+	"podium2.png": [[435, 377], [350, 400], [560, 400]],
+	"podium3.png": [[465, 390], [350, 410], [580, 410]],
+	"podium4.png": [[435, 390], [358, 405], [560, 405]],
+	"podium5.png": [[480, 390], [390, 405], [575, 405]],
 }
 const PLACES := ["GOLD (1st)", "SILVER (2nd)", "BRONZE (3rd)"]
 const PLACE_COL := [Color("f4d84a"), Color("d8d8e0"), Color("cd7f32")]
